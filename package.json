@@ -1,0 +1,39 @@
+{
+  "name": "kreels",
+  "version": "1.0.0",
+  "description": "Kreels - Short-form Video Platform",
+  "private": true,
+  "scripts": {
+    "dev": "docker compose up --build",
+    "dev:detach": "docker compose up -d --build",
+    "stop": "docker compose down",
+    "clean": "docker compose down -v --remove-orphans",
+    "logs": "docker compose logs -f",
+    "logs:api": "docker compose logs -f api",
+    "logs:web": "docker compose logs -f web",
+    "db:migrate": "docker compose exec api npx prisma migrate dev",
+    "db:generate": "docker compose exec api npx prisma generate",
+    "db:studio": "docker compose exec api npx prisma studio",
+    "db:seed": "docker compose exec api npm run db:seed",
+    "db:reset": "docker compose exec api npx prisma migrate reset",
+    "install:all": "cd api && npm install && cd ../web && npm install",
+    "build": "cd api && npm run build && cd ../web && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/kreels.git"
+  },
+  "keywords": [
+    "video",
+    "streaming",
+    "social",
+    "tiktok",
+    "short-form",
+    "live-streaming"
+  ],
+  "author": "Kreels Team",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

@@ -1,0 +1,608 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  username    String?   @unique
+  displayName String?
+  avatar      String?
+  phone       String?
+  userType    UserType  @default(INDIVIDUAL)
+  
+  // Authentication
+  password    String?
+  emailVerified DateTime?
+  isActive    Boolean   @default(true)
+  
+  // Social Login
+  googleId    String?   @unique
+  facebookId  String?   @unique
+  appleId     String?   @unique
+  
+  // Profile
+  bio         String?
+  dateOfBirth DateTime?
+  gender      Gender?
+  country     String?
+  language    String    @default("en")
+  
+  // Preferences
+  preferences Json?
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+  
+  // Relations
+  wallet        Wallet?
+  videos        Video[]
+  series        Series[]
+  likes         Like[]
+  comments      Comment[]
+  bookmarks     Bookmark[]
+  watchHistory  WatchHistory[]
+  subscriptions Subscription[]
+  orders        Order[]
+  giftsSent     Gift[]         @relation("GiftSender")
+  giftsReceived Gift[]         @relation("GiftReceiver")
+  
+  // Forum Relations
+  forumPosts    ForumPost[]
+  clubMemberships ClubMember[]
+  clubsOwned    Club[]         @relation("ClubOwner")
+  
+  // Live Streaming
+  liveStreams   LiveStream[]
+  
+  // Invitations
+  invitationCode String?       @unique
+  invitedBy     String?
+  inviter       User?         @relation("UserInvitations", fields: [invitedBy], references: [id])
+  invitees      User[]        @relation("UserInvitations")
+  
+  @@map("users")
+}
+
+enum UserType {
+  INDIVIDUAL
+  PROFESSIONAL
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+// Wallet & Payment Models
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Decimal  @default(0) @db.Decimal(10, 2)
+  currency  String   @default("USD")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  
+  @@map("wallets")
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  walletId    String
+  type        TransactionType
+  amount      Decimal         @db.Decimal(10, 2)
+  description String?
+  reference   String?         // Order ID, Video ID, etc.
+  metadata    Json?
+  
+  createdAt   DateTime        @default(now())
+  
+  wallet      Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  
+  @@map("transactions")
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+  REFUND
+  GIFT_RECEIVED
+  GIFT_SENT
+  SUBSCRIPTION
+  VIDEO_PURCHASE
+  EPISODE_PURCHASE
+  AD_REWARD
+  INVITATION_BONUS
+}
+
+// Content Models
+model Series {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  thumbnail   String?
+  banner      String?
+  category    String?
+  tags        String[]
+  
+  // Pricing
+  price       Decimal?    @db.Decimal(10, 2)
+  isPaid      Boolean     @default(false)
+  
+  // Metadata
+  totalEpisodes Int       @default(0)
+  duration    Int?        // Total duration in seconds
+  
+  // Creator
+  creatorId   String
+  creator     User        @relation(fields: [creatorId], references: [id])
+  
+  // Status
+  isActive    Boolean     @default(true)
+  isPublished Boolean     @default(false)
+  publishedAt DateTime?
+  
+  // Localization
+  language    String      @default("en")
+  
+  // Analytics
+  viewCount   Int         @default(0)
+  likeCount   Int         @default(0)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  episodes    Video[]
+  orders      Order[]
+  bookmarks   Bookmark[]
+  
+  @@map("series")
+}
+
+model Video {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  thumbnail   String?
+  
+  // Video Files
+  videoUrl    String?      // Original video URL
+  hlsUrl      String?      // HLS streaming URL
+  dashUrl     String?      // DASH streaming URL
+  muxAssetId  String?      // Mux Asset ID
+  muxPlaybackId String?    // Mux Playback ID
+  
+  // Video Properties
+  duration    Int?         // Duration in seconds
+  resolution  String?      // HD, 4K, etc.
+  fileSize    BigInt?      // File size in bytes
+  aspectRatio String?      // 9:16 for vertical videos
+  
+  // Series/Episode Info
+  seriesId    String?
+  episodeNumber Int?
+  seasonNumber  Int?       @default(1)
+  
+  // Pricing
+  price       Decimal?     @db.Decimal(10, 2)
+  isPaid      Boolean      @default(false)
+  isFree      Boolean      @default(true)
+  
+  // Creator
+  creatorId   String
+  creator     User         @relation(fields: [creatorId], references: [id])
+  
+  // Status
+  isActive    Boolean      @default(true)
+  isPublished Boolean      @default(false)
+  publishedAt DateTime?
+  processingStatus VideoProcessingStatus @default(PENDING)
+  
+  // Localization
+  language    String       @default("en")
+  subtitles   Json?        // Subtitle tracks
+  
+  // Analytics
+  viewCount   Int          @default(0)
+  likeCount   Int          @default(0)
+  shareCount  Int          @default(0)
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
+  series      Series?      @relation(fields: [seriesId], references: [id])
+  likes       Like[]
+  comments    Comment[]
+  bookmarks   Bookmark[]
+  watchHistory WatchHistory[]
+  orders      Order[]
+  
+  @@map("videos")
+}
+
+enum VideoProcessingStatus {
+  PENDING
+  PROCESSING
+  READY
+  ERROR
+}
+
+// Social Features
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   String
+  
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, videoId])
+  @@map("likes")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   String
+  content   String
+  parentId  String?  // For nested comments
+  
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  
+  @@map("comments")
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   String?
+  seriesId  String?
+  
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video?   @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  series    Series?  @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, videoId])
+  @@unique([userId, seriesId])
+  @@map("bookmarks")
+}
+
+model WatchHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  videoId     String
+  watchedAt   DateTime @default(now())
+  progress    Int      @default(0) // Progress in seconds
+  completed   Boolean  @default(false)
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, videoId])
+  @@map("watch_history")
+}
+
+// Forum & Club Features
+model Forum {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean     @default(true)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  posts       ForumPost[]
+  clubs       Club[]
+  
+  @@map("forums")
+}
+
+model ForumPost {
+  id        String   @id @default(cuid())
+  forumId   String
+  userId    String
+  title     String
+  content   String
+  isActive  Boolean  @default(true)
+  isPinned  Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  forum     Forum    @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("forum_posts")
+}
+
+model Club {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  avatar      String?
+  banner      String?
+  forumId     String?
+  ownerId     String
+  
+  isPrivate   Boolean      @default(false)
+  isActive    Boolean      @default(true)
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  forum       Forum?       @relation(fields: [forumId], references: [id])
+  owner       User         @relation("ClubOwner", fields: [ownerId], references: [id])
+  members     ClubMember[]
+  
+  @@map("clubs")
+}
+
+model ClubMember {
+  id        String           @id @default(cuid())
+  clubId    String
+  userId    String
+  role      ClubMemberRole   @default(MEMBER)
+  
+  joinedAt  DateTime         @default(now())
+  
+  club      Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([clubId, userId])
+  @@map("club_members")
+}
+
+enum ClubMemberRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+// Live Streaming
+model LiveStream {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  thumbnail   String?
+  
+  // Stream Configuration
+  streamKey   String           @unique
+  rtmpUrl     String?
+  hlsUrl      String?
+  muxLiveStreamId String?
+  
+  // Status
+  status      LiveStreamStatus @default(SCHEDULED)
+  isActive    Boolean          @default(true)
+  
+  // Timing
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+  
+  // Creator
+  creatorId   String
+  creator     User             @relation(fields: [creatorId], references: [id])
+  
+  // Analytics
+  viewerCount Int              @default(0)
+  maxViewers  Int              @default(0)
+  duration    Int?             // Duration in seconds
+  
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  // Relations
+  gifts       Gift[]
+  
+  @@map("live_streams")
+}
+
+enum LiveStreamStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+// Gift System
+model Gift {
+  id           String     @id @default(cuid())
+  giftTypeId   String
+  senderId     String
+  receiverId   String?    // Can be null for live stream gifts to platform
+  liveStreamId String?    // For live stream gifts
+  
+  quantity     Int        @default(1)
+  totalValue   Decimal    @db.Decimal(10, 2)
+  
+  message      String?
+  isActive     Boolean    @default(true)
+  
+  createdAt    DateTime   @default(now())
+  
+  giftType     GiftType   @relation(fields: [giftTypeId], references: [id])
+  sender       User       @relation("GiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver     User?      @relation("GiftReceiver", fields: [receiverId], references: [id])
+  liveStream   LiveStream? @relation(fields: [liveStreamId], references: [id])
+  
+  @@map("gifts")
+}
+
+model GiftType {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  icon        String  // URL to gift icon/animation
+  value       Decimal @db.Decimal(10, 2) // Cost in platform currency
+  
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  gifts       Gift[]
+  
+  @@map("gift_types")
+}
+
+// Orders & Subscriptions
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  type        OrderType
+  status      OrderStatus @default(PENDING)
+  
+  // Pricing
+  amount      Decimal     @db.Decimal(10, 2)
+  currency    String      @default("USD")
+  
+  // Content
+  videoId     String?
+  seriesId    String?
+  
+  // Payment
+  paymentMethod    String?
+  paymentReference String? // Stripe payment intent ID, etc.
+  
+  // Metadata
+  metadata    Json?
+  
+  // Timing
+  expiresAt   DateTime?   // For rentals
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video       Video?      @relation(fields: [videoId], references: [id])
+  series      Series?     @relation(fields: [seriesId], references: [id])
+  
+  @@map("orders")
+}
+
+enum OrderType {
+  VIDEO_PURCHASE
+  EPISODE_PURCHASE
+  SERIES_PURCHASE
+  SUBSCRIPTION
+  WALLET_TOPUP
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+model Subscription {
+  id          String             @id @default(cuid())
+  userId      String
+  type        SubscriptionType
+  status      SubscriptionStatus @default(ACTIVE)
+  
+  // Pricing
+  amount      Decimal            @db.Decimal(10, 2)
+  currency    String             @default("USD")
+  interval    String             // daily, weekly, monthly, yearly
+  
+  // Timing
+  startDate   DateTime
+  endDate     DateTime
+  
+  // Payment
+  stripeSubscriptionId String?
+  
+  // Auto-renewal
+  autoRenew   Boolean            @default(true)
+  
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("subscriptions")
+}
+
+enum SubscriptionType {
+  BASIC
+  PREMIUM
+  VIP
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAUSED
+}
+
+// Coupons & Promotions
+model Coupon {
+  id          String     @id @default(cuid())
+  code        String     @unique
+  type        CouponType
+  
+  // Discount
+  discountValue   Decimal @db.Decimal(10, 2)
+  discountType    String  // percentage, fixed
+  
+  // Usage
+  usageLimit      Int?    // null = unlimited
+  usedCount       Int     @default(0)
+  
+  // Validity
+  isActive        Boolean @default(true)
+  validFrom       DateTime
+  validUntil      DateTime
+  
+  // Restrictions
+  minOrderAmount  Decimal? @db.Decimal(10, 2)
+  applicableToType String? // video, series, subscription
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("coupons")
+}
+
+enum CouponType {
+  DISCOUNT
+  FREE_CONTENT
+  WALLET_CREDIT
+}

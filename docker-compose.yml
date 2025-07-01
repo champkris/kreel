@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: kreels_postgres
+    environment:
+      POSTGRES_DB: kreels
+      POSTGRES_USER: kreels
+      POSTGRES_PASSWORD: kreels123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - kreels_network
+
+  # Redis for caching and real-time features
+  redis:
+    image: redis:7-alpine
+    container_name: kreels_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kreels_network
+
+  # Node.js API Server
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: kreels_api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://kreels:kreels123@postgres:5432/kreels
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your_jwt_secret_change_in_production
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - kreels_network
+    command: npm run dev
+
+  # React Web Frontend
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: kreels_web
+    environment:
+      REACT_APP_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - kreels_network
+    command: npm start
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: kreels_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - web
+      - api
+    networks:
+      - kreels_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  kreels_network:
+    driver: bridge
