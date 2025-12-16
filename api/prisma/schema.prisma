@@ -62,7 +62,16 @@ model User {
   forumPosts    ForumPost[]
   clubMemberships ClubMember[]
   clubsOwned    Club[]         @relation("ClubOwner")
-  
+
+  // Challenge Relations
+  challengesCreated  Challenge[]      @relation("ChallengeCreator")
+  challengeEntries   ChallengeEntry[] @relation("ChallengeEntries")
+  challengeVotes     ChallengeVote[]  @relation("ChallengeVotes")
+
+  // Creator Token Relations
+  creatorToken       CreatorToken?    @relation("CreatorToken")
+  tokenHoldings      TokenHolder[]    @relation("TokenHolder")
+
   // Live Streaming
   liveStreams   LiveStream[]
   
@@ -130,6 +139,40 @@ enum TransactionType {
   EPISODE_PURCHASE
   AD_REWARD
   INVITATION_BONUS
+  CHALLENGE_REWARD
+  CHALLENGE_ENTRY_FEE    // Deducted when entering paid challenge
+  CHALLENGE_PRIZE_PAYOUT // Prize distributed from pool
+  CHALLENGE_REFUND       // Refund if challenge cancelled
+}
+
+// Challenge System Enums
+enum ChallengeType {
+  STORY_CO_CREATION
+  CHARACTER_DEVELOPMENT
+  ALTERNATE_ENDING
+  WORLDBUILDING
+  THEME_MICRO
+}
+
+enum ChallengeStatus {
+  DRAFT
+  ACTIVE
+  VOTING
+  COMPLETED
+  CANCELLED
+}
+
+enum EntryTier {
+  FREE           // No cost (default)
+  COIN_ENTRY     // Pay 20-100 coins to enter
+  EXCLUSIVE      // Club members OR premium users only
+  CREATOR_TOKEN  // Requires holding creator's token
+}
+
+enum ExclusiveType {
+  CLUB_MEMBER    // Only club members
+  PREMIUM_USER   // Only premium/VIP subscribers
+  BOTH           // Either club member OR premium
 }
 
 // Content Models
@@ -364,7 +407,8 @@ model Club {
   forum       Forum?       @relation(fields: [forumId], references: [id])
   owner       User         @relation("ClubOwner", fields: [ownerId], references: [id])
   members     ClubMember[]
-  
+  challenges  Challenge[]
+
   @@map("clubs")
 }
 
@@ -605,4 +649,151 @@ enum CouponType {
   DISCOUNT
   FREE_CONTENT
   WALLET_CREDIT
+}
+
+// Challenge System Models
+model Challenge {
+  id              String           @id @default(cuid())
+  clubId          String
+  creatorId       String
+
+  // Challenge Details
+  title           String
+  description     String
+  type            ChallengeType
+  guidelines      String?
+
+  // Media
+  thumbnail       String?
+  attachments     Json?
+
+  // Constraints
+  maxEntries      Int?
+  wordLimit       Int?
+
+  // Entry Tier Configuration
+  entryTier           EntryTier       @default(FREE)
+  entryFee            Decimal?        @db.Decimal(10, 2)  // 20-100 for COIN_ENTRY
+  prizePool           Decimal         @db.Decimal(10, 2) @default(0)
+  platformCommission  Decimal         @db.Decimal(5, 4) @default(0.30)  // 30%
+  exclusiveType       ExclusiveType?  // For EXCLUSIVE tier
+  requiredTokenId     String?         // For CREATOR_TOKEN tier
+
+  // Rewards
+  rewardAmount    Decimal          @db.Decimal(10, 2) @default(50)
+  maxWinners      Int              @default(1)
+
+  // Status & Timing
+  status          ChallengeStatus  @default(DRAFT)
+  submissionStart DateTime?
+  submissionEnd   DateTime
+  votingEnd       DateTime?
+
+  // Analytics
+  entryCount      Int              @default(0)
+  voteCount       Int              @default(0)
+
+  // Timestamps
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  completedAt     DateTime?
+
+  // Relations
+  club            Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  creator         User             @relation("ChallengeCreator", fields: [creatorId], references: [id])
+  entries         ChallengeEntry[]
+  requiredToken   CreatorToken?    @relation(fields: [requiredTokenId], references: [id])
+
+  @@index([clubId, status])
+  @@index([status, submissionEnd])
+  @@index([entryTier])
+  @@map("challenges")
+}
+
+model ChallengeEntry {
+  id            String    @id @default(cuid())
+  challengeId   String
+  userId        String
+
+  // Entry Content
+  title         String?
+  content       String
+  mediaUrl      String?
+  mediaType     String?
+
+  // Status
+  isActive      Boolean   @default(true)
+  isFeatured    Boolean   @default(false)
+  isWinner      Boolean   @default(false)
+  winnerRank    Int?
+
+  // Analytics
+  voteCount     Int       @default(0)
+
+  // Entry Fee Tracking
+  entryFeePaid       Decimal?        @db.Decimal(10, 2)  // Amount paid to enter
+  feeTransactionId   String?         // Reference to the transaction
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  challenge     Challenge       @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user          User            @relation("ChallengeEntries", fields: [userId], references: [id], onDelete: Cascade)
+  votes         ChallengeVote[]
+
+  @@unique([challengeId, userId])
+  @@index([challengeId, voteCount])
+  @@map("challenge_entries")
+}
+
+model ChallengeVote {
+  id        String   @id @default(cuid())
+  entryId   String
+  voterId   String
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  entry     ChallengeEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  voter     User           @relation("ChallengeVotes", fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, voterId])
+  @@map("challenge_votes")
+}
+
+// Creator Token System (for CREATOR_TOKEN entry tier)
+model CreatorToken {
+  id              String   @id @default(cuid())
+  creatorId       String   @unique
+  name            String
+  symbol          String   @db.VarChar(10)
+  totalSupply     Decimal  @db.Decimal(18, 0) @default(0)
+  isActive        Boolean  @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  creator         User          @relation("CreatorToken", fields: [creatorId], references: [id])
+  holders         TokenHolder[]
+  challenges      Challenge[]
+
+  @@map("creator_tokens")
+}
+
+model TokenHolder {
+  id              String   @id @default(cuid())
+  tokenId         String
+  userId          String
+  balance         Decimal  @db.Decimal(18, 8) @default(0)
+
+  acquiredAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  token           CreatorToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  user            User         @relation("TokenHolder", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenId, userId])
+  @@map("token_holders")
 }

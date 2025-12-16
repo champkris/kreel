@@ -19,6 +19,7 @@ import walletRoutes from './routes/wallet';
 import socialRoutes from './routes/social';
 import liveRoutes from './routes/live';
 import forumRoutes from './routes/forum';
+import challengeRoutes from './routes/challenges';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -83,6 +84,7 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/live', liveRoutes);
 app.use('/api/forum', forumRoutes);
+app.use('/api/challenges', challengeRoutes);
 
 // Socket.IO for real-time features
 io.on('connection', (socket) => {
@@ -107,7 +109,16 @@ io.on('connection', (socket) => {
   socket.on('send-gift', (data) => {
     io.to(`live-${data.liveStreamId}`).emit('new-gift', data);
   });
-  
+
+  // Challenge events
+  socket.on('join-challenge', (challengeId) => {
+    socket.join(`challenge-${challengeId}`);
+  });
+
+  socket.on('leave-challenge', (challengeId) => {
+    socket.leave(`challenge-${challengeId}`);
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
