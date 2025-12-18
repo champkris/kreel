@@ -21,6 +21,5 @@ RUN npm run build
 # Expose port
 EXPOSE 3001
 
-# Production start command using ENTRYPOINT
-ENTRYPOINT ["sh", "-c"]
-CMD ["npx prisma migrate deploy; echo SERVER_STARTING; node dist/index.js"]
+# Production start command
+CMD ["node", "dist/index.js"]
