@@ -28,15 +28,25 @@ import { notFound } from './middleware/notFound';
 // Load environment variables
 dotenv.config();
 
-// Initialize database and cache
+console.log('Starting Kreels API...');
+console.log('PORT:', process.env.PORT);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
+// Initialize database
 export const prisma = new PrismaClient();
-export const redis = createClient({ 
-  url: process.env.REDIS_URL 
+
+// Initialize Redis (optional - app works without it)
+export const redis = createClient({
+  url: process.env.REDIS_URL
 });
 
-// Connect to Redis
-redis.on('error', (err) => console.log('Redis Client Error', err));
-redis.connect();
+redis.on('error', (err) => console.log('Redis Client Error:', err));
+redis.on('connect', () => console.log('Redis connected'));
+
+// Connect Redis in background (don't block server startup)
+redis.connect().catch((err) => {
+  console.log('Redis connection failed, continuing without cache:', err.message);
+});
 
 const app = express();
 const server = createServer(app);
