@@ -18,11 +18,9 @@ RUN npx prisma generate
 # Build TypeScript
 RUN npm run build
 
-# Make start script executable
-RUN chmod +x start.sh
-
 # Expose port
 EXPOSE 3001
 
-# Production start command
-CMD ["./start.sh"]
+# Production start command using ENTRYPOINT
+ENTRYPOINT ["sh", "-c"]
+CMD ["npx prisma migrate deploy; echo SERVER_STARTING; node dist/index.js"]
