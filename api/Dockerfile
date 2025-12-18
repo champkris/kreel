@@ -22,4 +22,4 @@ RUN npm run build
 EXPOSE 3001
 
 # Production start command
-CMD ["sh", "-c", "echo 'Container starting...' && npx prisma migrate deploy 2>&1 || echo 'Migration failed, continuing...' && echo 'Starting server...' && npm start"]
+CMD npx prisma migrate deploy; node dist/index.js
