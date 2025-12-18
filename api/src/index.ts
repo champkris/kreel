@@ -1,3 +1,6 @@
+// First thing - log that we're starting
+console.log('=== KREELS API STARTING ===');
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -7,8 +10,12 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import rateLimit from 'express-rate-limit';
 
+console.log('Core imports loaded');
+
 import { PrismaClient } from '@prisma/client';
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
+
+console.log('DB imports loaded');
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -21,9 +28,13 @@ import liveRoutes from './routes/live';
 import forumRoutes from './routes/forum';
 import challengeRoutes from './routes/challenges';
 
+console.log('Routes imported');
+
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
+
+console.log('Middleware imported');
 
 // Load environment variables
 dotenv.config();
@@ -31,22 +42,27 @@ dotenv.config();
 console.log('Starting Kreels API...');
 console.log('PORT:', process.env.PORT);
 console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('REDIS_URL:', process.env.REDIS_URL ? 'SET' : 'NOT SET');
 
 // Initialize database
 export const prisma = new PrismaClient();
 
 // Initialize Redis (optional - app works without it)
-export const redis = createClient({
-  url: process.env.REDIS_URL
-});
+let redis: RedisClientType | null = null;
+if (process.env.REDIS_URL) {
+  redis = createClient({
+    url: process.env.REDIS_URL
+  });
+  redis.on('error', (err) => console.log('Redis Client Error:', err));
+  redis.on('connect', () => console.log('Redis connected'));
+  redis.connect().catch((err) => {
+    console.log('Redis connection failed, continuing without cache:', err.message);
+  });
+} else {
+  console.log('REDIS_URL not set, skipping Redis');
+}
 
-redis.on('error', (err) => console.log('Redis Client Error:', err));
-redis.on('connect', () => console.log('Redis connected'));
-
-// Connect Redis in background (don't block server startup)
-redis.connect().catch((err) => {
-  console.log('Redis connection failed, continuing without cache:', err.message);
-});
+export { redis };
 
 const app = express();
 const server = createServer(app);
@@ -150,7 +166,7 @@ server.listen(PORT, () => {
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
   await prisma.$disconnect();
-  await redis.disconnect();
+  if (redis) await redis.disconnect();
   server.close(() => {
     console.log('Process terminated');
     process.exit(0);
