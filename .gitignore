@@ -49,4 +49,4 @@ uploads/
 temp/
 
 # Prisma
-/api/prisma/migrations/
+# Keep migrations in git for deployment
