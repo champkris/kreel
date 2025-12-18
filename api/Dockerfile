@@ -22,4 +22,4 @@ RUN npm run build
 EXPOSE 3001
 
 # Production start command
-CMD npx prisma migrate deploy; node dist/index.js
+CMD sh -c "npx prisma migrate deploy && echo 'Starting Node...' && node --trace-warnings dist/index.js 2>&1"
