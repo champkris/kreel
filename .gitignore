@@ -50,3 +50,5 @@ temp/
 
 # Prisma
 # Keep migrations in git for deployment
+docs/
+fiverr/
