@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "KreelsMobile",
+    "slug": "KreelsMobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.champkris.KreelsMobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.champkris.KreelsMobile"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/4c6abf6f-3233-4690-b707-35e82093c6f2"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4c6abf6f-3233-4690-b707-35e82093c6f2"
+      },
+      "apiUrl": "https://kreel-production.up.railway.app"
+    },
+    "owner": "champkris"
+  }
+}
