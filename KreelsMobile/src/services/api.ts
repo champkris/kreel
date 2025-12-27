@@ -12,13 +12,20 @@ const getAPIBaseURL = () => {
     } else if (Platform.OS === 'android') {
       // For Android Emulator, use special IP
       return 'http://10.0.2.2:3001/api';
+    } else if (Platform.OS === 'web') {
+      // For web dev, use localhost
+      return 'http://localhost:3001/api';
     } else {
       // For physical devices, use computer's IP
       return 'http://192.168.1.43:3001/api';
     }
   } else {
-    // Production URL
-    return 'https://your-production-api.com/api';
+    // Production URL - use relative path since API is on same domain
+    if (Platform.OS === 'web') {
+      return '/api';
+    }
+    // For mobile production, use the DO app URL
+    return 'https://kreels-api-xxxxx.ondigitalocean.app/api';
   }
 };
 
