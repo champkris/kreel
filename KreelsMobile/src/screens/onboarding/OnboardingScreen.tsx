@@ -22,6 +22,7 @@ interface OnboardingSlide {
   title: string;
   subtitle: string;
   description: string;
+  image: string;
 }
 
 const slides: OnboardingSlide[] = [
@@ -30,18 +31,21 @@ const slides: OnboardingSlide[] = [
     title: 'Discover Stories That',
     subtitle: 'Connect You',
     description: 'Explore dramas, series, and short films from creators around the entire world.',
+    image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80',
   },
   {
     id: '2',
     title: 'Connect. Collaborate.',
     subtitle: 'Create Together.',
     description: 'Connect with fans, creators, and storytellers. Grow your following in one space.',
+    image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80',
   },
   {
     id: '3',
     title: 'Create. Earn. Be Recognized',
     subtitle: 'for Your Talent.',
     description: 'Share your content, get rewarded, and support your favorite creators.',
+    image: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800&q=80',
   },
 ];
 
@@ -70,16 +74,20 @@ export default function OnboardingScreen({ onComplete, onSkip }: Props) {
     setCurrentIndex(slideIndex);
   };
 
-  const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => (
+  const renderSlide = ({ item }: { item: OnboardingSlide }) => (
     <View style={styles.slide}>
-      {/* Background with movie posters grid effect */}
-      <View style={styles.backgroundContainer}>
+      {/* Background image */}
+      <ImageBackground
+        source={{ uri: item.image }}
+        style={styles.backgroundContainer}
+        resizeMode="cover"
+      >
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.95)']}
           style={styles.gradient}
           locations={[0, 0.4, 0.7]}
         />
-      </View>
+      </ImageBackground>
 
       {/* Content */}
       <View style={styles.content}>
