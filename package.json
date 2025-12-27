@@ -16,8 +16,8 @@
     "db:studio": "docker compose exec api npx prisma studio",
     "db:seed": "docker compose exec api npm run db:seed",
     "db:reset": "docker compose exec api npx prisma migrate reset",
-    "install:all": "cd api && npm install && cd ../web && npm install",
-    "build": "cd api && npm run build && cd ../web && npm run build"
+    "install:all": "cd api && npm install && cd ../KreelsMobile && npm install",
+    "build": "cd api && npm install && npm run build && cd ../KreelsMobile && npm install && npx expo export --platform web"
   },
   "repository": {
     "type": "git",
