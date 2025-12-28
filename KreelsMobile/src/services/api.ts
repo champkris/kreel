@@ -25,7 +25,7 @@ const getAPIBaseURL = () => {
       return '/api';
     }
     // For mobile production, use the DO app URL
-    return 'https://kreels-api-xxxxx.ondigitalocean.app/api';
+    return 'https://kreels-ltntt.ondigitalocean.app/api';
   }
 };
 
