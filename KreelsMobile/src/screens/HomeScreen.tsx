@@ -91,6 +91,14 @@ export default function HomeScreen() {
     setShowSwipeablePlayer(true);
   };
 
+  const handleSeriesPress = (series: Video & { badge?: string }) => {
+    navigation.navigate('SeriesDetail', {
+      id: series.id,
+      title: series.title,
+      thumbnail: series.thumbnailUrl,
+    });
+  };
+
   const handleClosePlayer = () => {
     setShowSwipeablePlayer(false);
     setSelectedVideo(null);
@@ -275,7 +283,7 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.seriesCard}
-            onPress={() => handleVideoPress(item)}
+            onPress={() => handleSeriesPress(item)}
           >
             <View style={styles.seriesImage}>
               <Image

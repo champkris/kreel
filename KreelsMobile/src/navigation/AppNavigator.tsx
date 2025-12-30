@@ -20,6 +20,7 @@ import ViewAllScreen, { ViewAllType } from '../screens/ViewAllScreen';
 import ChannelScreen, { ChannelParams } from '../screens/ChannelScreen';
 import ClubDetailScreen, { ClubDetailParams } from '../screens/ClubDetailScreen';
 import VideoDetailScreen from '../screens/VideoDetailScreen';
+import SeriesDetailScreen from '../screens/SeriesDetailScreen';
 
 // New screens
 import {
@@ -115,6 +116,12 @@ export type RootStackParamList = {
   };
   // Video detail screen
   VideoDetail: {
+    id: string;
+    title?: string;
+    thumbnail?: string;
+  };
+  // Series detail screen
+  SeriesDetail: {
     id: string;
     title?: string;
     thumbnail?: string;
@@ -436,6 +443,7 @@ export default function AppNavigator() {
         <RootStack.Screen name="Channel" component={ChannelScreen} />
         <RootStack.Screen name="ClubDetail" component={ClubDetailScreen} />
         <RootStack.Screen name="VideoDetail" component={VideoDetailScreen} />
+        <RootStack.Screen name="SeriesDetail" component={SeriesDetailScreen} />
       </RootStack.Navigator>
     </NavigationContainer>
   );
