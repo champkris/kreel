@@ -476,34 +476,38 @@ export default function SeriesDetailScreen() {
             )}
 
             {/* Episodes List */}
-            <Text style={{ color: '#fff', marginBottom: 10 }}>
-              Debug: {currentSeason?.episodes?.length || 0} episodes found
-            </Text>
+            <View style={{ backgroundColor: '#ff0000', padding: 10, marginBottom: 10 }}>
+              <Text style={{ color: '#fff', fontSize: 16 }}>
+                DEBUG: {currentSeason?.episodes?.length || 0} episodes in season {selectedSeason}
+              </Text>
+            </View>
             {(currentSeason?.episodes?.length || 0) > 0 ? (
-              <View>
+              <View style={{ width: '100%' }}>
                 {currentSeason?.episodes.map((episode, index) => {
                   if (!episode) return null;
                   return (
                     <View
-                      key={episode.id || index}
+                      key={episode.id || String(index)}
                       style={{
-                        backgroundColor: index % 2 === 0 ? '#333' : '#444',
+                        backgroundColor: index % 2 === 0 ? '#333333' : '#444444',
                         padding: 12,
                         marginBottom: 12,
                         borderRadius: 8,
+                        width: '100%',
+                        minHeight: 80,
                       }}
                     >
-                      <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
-                        {episode.episodeNumber || 0}. {episode.title || 'Untitled'}
+                      <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
+                        {String(episode.episodeNumber || 0)}. {String(episode.title || 'Untitled')}
                       </Text>
-                      <Text style={{ color: '#aaa', fontSize: 14, marginBottom: 8 }}>
-                        {episode.description || 'No description'}
+                      <Text style={{ color: '#aaaaaa', fontSize: 14, marginBottom: 8 }}>
+                        {String(episode.description || 'No description')}
                       </Text>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', display: 'flex' }}>
                         <Text style={{ color: '#22c55e', fontSize: 12 }}>
-                          {episode.accessType || 'FREE'}
+                          {String(episode.accessType || 'FREE')}
                         </Text>
-                        <Text style={{ color: '#888', fontSize: 12 }}>
+                        <Text style={{ color: '#888888', fontSize: 12 }}>
                           {formatDuration(episode.duration || 0)}
                         </Text>
                       </View>
