@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Kreels API - Short-form video platform backend",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
