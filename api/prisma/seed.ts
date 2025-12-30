@@ -421,6 +421,7 @@ async function main() {
         duration: 1800, // 30 min
         creatorId: officialCreator.id,
         seriesId: series1.id,
+        seasonNumber: 1,
         episodeNumber: 1,
         isPublished: true,
         accessType: 'FREE',
@@ -437,6 +438,7 @@ async function main() {
         duration: 1920, // 32 min
         creatorId: officialCreator.id,
         seriesId: series1.id,
+        seasonNumber: 1,
         episodeNumber: 2,
         isPublished: true,
         accessType: 'FREE',
@@ -453,6 +455,7 @@ async function main() {
         duration: 2100, // 35 min
         creatorId: officialCreator.id,
         seriesId: series1.id,
+        seasonNumber: 1,
         episodeNumber: 3,
         isPublished: true,
         accessType: 'LOCKED',
@@ -470,6 +473,7 @@ async function main() {
         duration: 2400, // 40 min
         creatorId: officialCreator.id,
         seriesId: series1.id,
+        seasonNumber: 1,
         episodeNumber: 4,
         isPublished: true,
         accessType: 'LOCKED',
@@ -487,6 +491,7 @@ async function main() {
         duration: 2700, // 45 min
         creatorId: officialCreator.id,
         seriesId: series1.id,
+        seasonNumber: 1,
         episodeNumber: 5,
         isPublished: true,
         accessType: 'PAID',
@@ -511,6 +516,7 @@ async function main() {
         duration: 1500, // 25 min
         creatorId: professionalUser.id,
         seriesId: series2.id,
+        seasonNumber: 1,
         episodeNumber: 1,
         isPublished: true,
         accessType: 'FREE',
@@ -527,6 +533,7 @@ async function main() {
         duration: 1620, // 27 min
         creatorId: professionalUser.id,
         seriesId: series2.id,
+        seasonNumber: 1,
         episodeNumber: 2,
         isPublished: true,
         accessType: 'FREE',
@@ -543,6 +550,7 @@ async function main() {
         duration: 1800, // 30 min
         creatorId: professionalUser.id,
         seriesId: series2.id,
+        seasonNumber: 1,
         episodeNumber: 3,
         isPublished: true,
         accessType: 'LOCKED',
@@ -560,6 +568,7 @@ async function main() {
         duration: 1740, // 29 min
         creatorId: professionalUser.id,
         seriesId: series2.id,
+        seasonNumber: 1,
         episodeNumber: 4,
         isPublished: true,
         accessType: 'LOCKED',
@@ -577,6 +586,7 @@ async function main() {
         duration: 2100, // 35 min
         creatorId: professionalUser.id,
         seriesId: series2.id,
+        seasonNumber: 1,
         episodeNumber: 5,
         isPublished: true,
         accessType: 'PAID',
@@ -601,6 +611,7 @@ async function main() {
         duration: 1680, // 28 min
         creatorId: individualUser.id,
         seriesId: series3.id,
+        seasonNumber: 1,
         episodeNumber: 1,
         isPublished: true,
         accessType: 'FREE',
@@ -617,6 +628,7 @@ async function main() {
         duration: 1560, // 26 min
         creatorId: individualUser.id,
         seriesId: series3.id,
+        seasonNumber: 1,
         episodeNumber: 2,
         isPublished: true,
         accessType: 'FREE',
@@ -633,6 +645,7 @@ async function main() {
         duration: 1920, // 32 min
         creatorId: individualUser.id,
         seriesId: series3.id,
+        seasonNumber: 1,
         episodeNumber: 3,
         isPublished: true,
         accessType: 'FREE',
@@ -649,6 +662,7 @@ async function main() {
         duration: 1740, // 29 min
         creatorId: individualUser.id,
         seriesId: series3.id,
+        seasonNumber: 1,
         episodeNumber: 4,
         isPublished: true,
         accessType: 'LOCKED',
@@ -666,6 +680,7 @@ async function main() {
         duration: 2400, // 40 min
         creatorId: individualUser.id,
         seriesId: series3.id,
+        seasonNumber: 1,
         episodeNumber: 5,
         isPublished: true,
         accessType: 'PAID',
@@ -690,6 +705,7 @@ async function main() {
         duration: 2100, // 35 min
         creatorId: professionalUser.id,
         seriesId: series4.id,
+        seasonNumber: 1,
         episodeNumber: 1,
         isPublished: true,
         accessType: 'FREE',
@@ -706,6 +722,7 @@ async function main() {
         duration: 2280, // 38 min
         creatorId: professionalUser.id,
         seriesId: series4.id,
+        seasonNumber: 1,
         episodeNumber: 2,
         isPublished: true,
         accessType: 'LOCKED',
@@ -723,6 +740,7 @@ async function main() {
         duration: 2040, // 34 min
         creatorId: professionalUser.id,
         seriesId: series4.id,
+        seasonNumber: 1,
         episodeNumber: 3,
         isPublished: true,
         accessType: 'LOCKED',
@@ -740,6 +758,7 @@ async function main() {
         duration: 2700, // 45 min
         creatorId: professionalUser.id,
         seriesId: series4.id,
+        seasonNumber: 1,
         episodeNumber: 4,
         isPublished: true,
         accessType: 'PAID',
@@ -764,6 +783,7 @@ async function main() {
         duration: 1800, // 30 min
         creatorId: officialCreator.id,
         seriesId: series5.id,
+        seasonNumber: 1,
         episodeNumber: 1,
         isPublished: true,
         accessType: 'FREE',
@@ -780,6 +800,7 @@ async function main() {
         duration: 1920, // 32 min
         creatorId: officialCreator.id,
         seriesId: series5.id,
+        seasonNumber: 1,
         episodeNumber: 2,
         isPublished: true,
         accessType: 'LOCKED',
@@ -797,6 +818,7 @@ async function main() {
         duration: 2040, // 34 min
         creatorId: officialCreator.id,
         seriesId: series5.id,
+        seasonNumber: 1,
         episodeNumber: 3,
         isPublished: true,
         accessType: 'LOCKED',
@@ -814,6 +836,7 @@ async function main() {
         duration: 2400, // 40 min
         creatorId: officialCreator.id,
         seriesId: series5.id,
+        seasonNumber: 1,
         episodeNumber: 4,
         isPublished: true,
         accessType: 'PAID',
