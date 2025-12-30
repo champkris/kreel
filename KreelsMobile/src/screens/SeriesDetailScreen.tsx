@@ -286,40 +286,6 @@ export default function SeriesDetailScreen() {
   console.log('Current season:', currentSeason?.seasonNumber);
   console.log('Episodes in current season:', currentSeason?.episodes?.length);
 
-  const renderEpisode = ({ item: episode }: { item: Episode }) => (
-    <TouchableOpacity
-      style={styles.episodeItem}
-      onPress={() => handleEpisodePress(episode)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.episodeThumbnailContainer}>
-        <Image
-          source={{ uri: episode.thumbnail || paramThumbnail }}
-          style={styles.episodeThumbnail}
-        />
-        <View style={styles.playOverlay}>
-          <View style={styles.playButton}>
-            <Ionicons name="play" size={24} color={colors.textPrimary} />
-          </View>
-        </View>
-        {getAccessBadge(episode.accessType, episode.price)}
-      </View>
-      <View style={styles.episodeInfo}>
-        <View style={styles.episodeHeader}>
-          <Text style={styles.episodeTitle} numberOfLines={1}>
-            {episode.episodeNumber}. {episode.title}
-          </Text>
-          <Text style={styles.episodeDuration}>{formatDuration(episode.duration)}</Text>
-        </View>
-        {episode.description && (
-          <Text style={styles.episodeDescription} numberOfLines={2}>
-            {episode.description}
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -511,11 +477,40 @@ export default function SeriesDetailScreen() {
 
             {/* Episodes List */}
             {(currentSeason?.episodes?.length || 0) > 0 ? (
-              <View style={styles.episodesList}>
+              <View>
                 {currentSeason?.episodes.map((episode) => (
-                  <View key={episode.id}>
-                    {renderEpisode({ item: episode })}
-                  </View>
+                  <TouchableOpacity
+                    key={episode.id}
+                    style={styles.episodeItem}
+                    onPress={() => handleEpisodePress(episode)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.episodeThumbnailContainer}>
+                      <Image
+                        source={{ uri: episode.thumbnail || paramThumbnail }}
+                        style={styles.episodeThumbnail}
+                      />
+                      <View style={styles.playOverlay}>
+                        <View style={styles.playButton}>
+                          <Ionicons name="play" size={24} color={colors.textPrimary} />
+                        </View>
+                      </View>
+                      {getAccessBadge(episode.accessType, episode.price)}
+                    </View>
+                    <View style={styles.episodeInfo}>
+                      <View style={styles.episodeHeader}>
+                        <Text style={styles.episodeTitle} numberOfLines={1}>
+                          {episode.episodeNumber}. {episode.title}
+                        </Text>
+                        <Text style={styles.episodeDuration}>{formatDuration(episode.duration)}</Text>
+                      </View>
+                      {episode.description && (
+                        <Text style={styles.episodeDescription} numberOfLines={2}>
+                          {episode.description}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             ) : (
@@ -775,10 +770,10 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
   },
   episodesList: {
-    gap: spacing.lg,
+    // gap doesn't work well on web, use marginBottom on items instead
   },
   episodeItem: {
-    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
   episodeThumbnailContainer: {
     position: 'relative',
@@ -833,7 +828,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
   },
   episodeInfo: {
-    gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   episodeHeader: {
     flexDirection: 'row',
