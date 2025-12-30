@@ -355,11 +355,15 @@ export default function SeriesDetailScreen() {
           />
           <TouchableOpacity
             style={styles.closeButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              console.log('Close button pressed');
+              navigation.goBack();
+            }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="close" size={28} color={colors.textPrimary} />
           </TouchableOpacity>
-          <View style={styles.videoPlayOverlay}>
+          <View style={styles.videoPlayOverlay} pointerEvents="box-none">
             <TouchableOpacity style={styles.bigPlayButton}>
               <Ionicons name="play" size={40} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -577,12 +581,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.md,
     right: spacing.md,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 100,
   },
   videoPlayOverlay: {
     ...StyleSheet.absoluteFillObject,
