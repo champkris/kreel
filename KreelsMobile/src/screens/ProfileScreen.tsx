@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   Dimensions,
   Alert,
   ImageBackground,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,29 +20,74 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { useAuthStore } from '../store/authStore';
+import { usersAPI, videosAPI } from '../services/api';
+import { Badge, BadgeRow, VerifiedBadge, RankBadge, XPProgress } from '../components/common';
+import type { BadgeData, RankData } from '../components/common';
 
 const { width: screenWidth } = Dimensions.get('window');
 const gridItemWidth = (screenWidth - spacing.screenPadding * 2 - spacing.md * 2) / 3;
 
-// Mock data
-const userStats = {
-  posts: 1374,
-  followers: 2480,
-  following: 1374,
-};
+interface UserProfile {
+  id: string;
+  username: string;
+  displayName: string;
+  avatar?: string;
+  bio?: string;
+  userType: string;
+  experiencePoints: number;
+  currentLevel: number;
+  currentRank?: RankData;
+  badges: BadgeData[];
+  followersCount: number;
+  followingCount: number;
+  videosCount: number;
+}
 
-const userPosts = [
-  { id: '1', title: 'Post 1', views: 125, likes: 41, image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=400&fit=crop' },
-  { id: '2', title: 'Post 2', views: 89, likes: 23, image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=400&fit=crop' },
-  { id: '3', title: 'Post 3', views: 156, likes: 67, image: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=300&h=400&fit=crop' },
-  { id: '4', title: 'Post 4', views: 234, likes: 89, image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=400&fit=crop' },
-  { id: '5', title: 'Post 5', views: 178, likes: 45, image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=400&fit=crop' },
-  { id: '6', title: 'Post 6', views: 312, likes: 102, image: 'https://images.unsplash.com/photo-1501612780327-45045538702b?w=300&h=400&fit=crop' },
-];
+interface VideoPost {
+  id: string;
+  title: string;
+  thumbnail?: string;
+  viewCount: number;
+  likeCount: number;
+}
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, logout } = useAuthStore();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [videos, setVideos] = useState<VideoPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile();
+      fetchVideos();
+    }
+  }, [user?.id]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await usersAPI.getProfile(user!.id);
+      if (response.success) {
+        setProfile(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchVideos = async () => {
+    try {
+      const response = await videosAPI.getCreatorVideos(user!.id);
+      if (response.success) {
+        setVideos(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+    }
+  };
 
   const handleCreatorDashboard = () => {
     navigation.navigate('CreatorDashboard' as never);
@@ -52,6 +99,10 @@ export default function ProfileScreen() {
 
   const handleSettings = () => {
     navigation.navigate('Settings' as never);
+  };
+
+  const handleBadgePress = (badge: BadgeData) => {
+    Alert.alert(badge.name, badge.description || 'Badge earned for your achievements!');
   };
 
   const handleLogout = () => {
@@ -66,11 +117,35 @@ export default function ProfileScreen() {
   };
 
   const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
     if (num >= 1000) {
       return (num / 1000).toFixed(1) + 'K';
     }
     return num.toString();
   };
+
+  // Default rank if not loaded
+  const defaultRank: RankData = {
+    name: 'Rookie',
+    icon: '🌱',
+    color: '#22c55e',
+  };
+
+  const currentRank = profile?.currentRank || defaultRank;
+  const hasOfficialBadge = profile?.badges?.some(b => b.type === 'OFFICIAL');
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -87,40 +162,70 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Info */}
         <View style={styles.profileSection}>
-          {/* Avatar */}
+          {/* Avatar with Rank */}
           <View style={styles.avatarContainer}>
-            <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
-              style={styles.avatar}
-            >
-              <Text style={styles.avatarInitial}>
-                {user?.displayName?.[0] || 'U'}
-              </Text>
-            </LinearGradient>
+            {profile?.avatar ? (
+              <Image source={{ uri: profile.avatar }} style={styles.avatarImage} />
+            ) : (
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark]}
+                style={styles.avatar}
+              >
+                <Text style={styles.avatarInitial}>
+                  {profile?.displayName?.[0] || user?.displayName?.[0] || 'U'}
+                </Text>
+              </LinearGradient>
+            )}
+            {/* Rank Badge overlay */}
+            <View style={styles.rankOverlay}>
+              <RankBadge rank={currentRank} size="small" />
+            </View>
           </View>
 
-          {/* Name */}
-          <Text style={styles.userName}>
-            @{user?.username || 'andrew_ainsley'}
+          {/* Name with verified badge */}
+          <View style={styles.nameContainer}>
+            <Text style={styles.userName}>
+              @{profile?.username || user?.username || 'user'}
+            </Text>
+            {hasOfficialBadge && <VerifiedBadge size={18} style={styles.verifiedBadge} />}
+          </View>
+
+          {/* Display name */}
+          <Text style={styles.displayName}>
+            {profile?.displayName || user?.displayName || 'User'}
           </Text>
+
+          {/* Bio */}
           <Text style={styles.userBio}>
-            Live Singer, guitarist, performer.
+            {profile?.bio || 'No bio yet'}
           </Text>
+
+          {/* Badges Row */}
+          {profile?.badges && profile.badges.length > 0 && (
+            <View style={styles.badgesSection}>
+              <BadgeRow
+                badges={profile.badges}
+                maxDisplay={5}
+                size="medium"
+                onPress={handleBadgePress}
+              />
+            </View>
+          )}
 
           {/* Stats */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{formatNumber(userStats.posts)}</Text>
+              <Text style={styles.statNumber}>{formatNumber(profile?.videosCount || 0)}</Text>
               <Text style={styles.statLabel}>Posts</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{formatNumber(userStats.followers)}</Text>
+              <Text style={styles.statNumber}>{formatNumber(profile?.followersCount || 0)}</Text>
               <Text style={styles.statLabel}>Followers</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{formatNumber(userStats.following)}</Text>
+              <Text style={styles.statNumber}>{formatNumber(profile?.followingCount || 0)}</Text>
               <Text style={styles.statLabel}>Following</Text>
             </View>
           </View>
@@ -130,6 +235,15 @@ export default function ProfileScreen() {
             <Ionicons name="pencil" size={16} color={colors.textPrimary} />
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* XP Progress */}
+        <View style={styles.xpSection}>
+          <XPProgress
+            currentXP={profile?.experiencePoints || 0}
+            currentLevel={profile?.currentLevel || 1}
+            rank={currentRank}
+          />
         </View>
 
         {/* Creator Dashboard Button */}
@@ -155,32 +269,41 @@ export default function ProfileScreen() {
 
         {/* Content Grid */}
         <View style={styles.contentSection}>
-          <View style={styles.contentGrid}>
-            {userPosts.map((post) => (
-              <TouchableOpacity key={post.id} style={styles.contentItem}>
-                <ImageBackground
-                  source={{ uri: post.image }}
-                  style={styles.contentImage}
-                  imageStyle={{ borderRadius: spacing.borderRadius.md }}
-                >
-                  <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.6)']}
-                    style={StyleSheet.absoluteFill}
-                  />
-                  <View style={styles.contentOverlay}>
-                    <View style={styles.contentStats}>
-                      <Ionicons name="play" size={12} color={colors.textPrimary} />
-                      <Text style={styles.contentStatText}>{post.views}</Text>
+          <Text style={styles.sectionTitle}>My Content</Text>
+          {videos.length > 0 ? (
+            <View style={styles.contentGrid}>
+              {videos.map((post) => (
+                <TouchableOpacity key={post.id} style={styles.contentItem}>
+                  <ImageBackground
+                    source={{ uri: post.thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=400&fit=crop' }}
+                    style={styles.contentImage}
+                    imageStyle={{ borderRadius: spacing.borderRadius.md }}
+                  >
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.6)']}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View style={styles.contentOverlay}>
+                      <View style={styles.contentStats}>
+                        <Ionicons name="play" size={12} color={colors.textPrimary} />
+                        <Text style={styles.contentStatText}>{formatNumber(post.viewCount)}</Text>
+                      </View>
+                      <View style={styles.contentStats}>
+                        <Ionicons name="heart" size={12} color={colors.textPrimary} />
+                        <Text style={styles.contentStatText}>{formatNumber(post.likeCount)}</Text>
+                      </View>
                     </View>
-                    <View style={styles.contentStats}>
-                      <Ionicons name="heart" size={12} color={colors.textPrimary} />
-                      <Text style={styles.contentStatText}>{post.likes}</Text>
-                    </View>
-                  </View>
-                </ImageBackground>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  </ImageBackground>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyContent}>
+              <Ionicons name="videocam-outline" size={48} color={colors.textMuted} />
+              <Text style={styles.emptyText}>No videos yet</Text>
+              <Text style={styles.emptySubtext}>Start creating to share your content!</Text>
+            </View>
+          )}
         </View>
 
         {/* Logout Button */}
@@ -203,6 +326,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -222,6 +350,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginBottom: spacing.md,
+    position: 'relative',
   },
   avatar: {
     width: 100,
@@ -230,20 +359,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
   avatarInitial: {
     color: colors.background,
     fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.bold,
   },
+  rankOverlay: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+  },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
   userName: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.md,
+  },
+  verifiedBadge: {
+    marginLeft: 4,
+  },
+  displayName: {
     color: colors.textPrimary,
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
     marginBottom: spacing.xs,
   },
   userBio: {
     color: colors.textMuted,
     fontSize: typography.fontSize.md,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xl,
+  },
+  badgesSection: {
     marginBottom: spacing.lg,
   },
   statsContainer: {
@@ -285,6 +442,10 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.medium,
   },
+  xpSection: {
+    paddingHorizontal: spacing.screenPadding,
+    marginBottom: spacing.xl,
+  },
   dashboardSection: {
     paddingHorizontal: spacing.screenPadding,
     marginBottom: spacing.xl,
@@ -316,6 +477,12 @@ const styles = StyleSheet.create({
   contentSection: {
     paddingHorizontal: spacing.screenPadding,
   },
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    marginBottom: spacing.md,
+  },
   contentGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -346,6 +513,21 @@ const styles = StyleSheet.create({
   contentStatText: {
     color: colors.textPrimary,
     fontSize: typography.fontSize.xs,
+  },
+  emptyContent: {
+    alignItems: 'center',
+    paddingVertical: spacing['3xl'],
+  },
+  emptyText: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    marginTop: spacing.md,
+  },
+  emptySubtext: {
+    color: colors.textMuted,
+    fontSize: typography.fontSize.md,
+    marginTop: spacing.xs,
   },
   logoutSection: {
     paddingHorizontal: spacing.screenPadding,

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Video } from '../../types';
 import { formatViews } from '../../data/seedData';
+import { VerifiedBadge } from '../common';
 
 interface VideoCardProps {
   video: Video;
@@ -17,6 +18,7 @@ interface VideoCardProps {
   showTitle?: boolean;
   showStats?: boolean;
   showBadge?: boolean;
+  showCreator?: boolean;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -53,6 +55,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   showTitle = true,
   showStats = true,
   showBadge = true,
+  showCreator = true,
 }) => {
   const aspectRatio = 3 / 4; // Portrait aspect ratio like in screenshots
   const cardHeight = width / aspectRatio;
@@ -124,6 +127,16 @@ const VideoCard: React.FC<VideoCardProps> = ({
           <Text style={styles.title} numberOfLines={2}>
             {video.title}
           </Text>
+          {showCreator && video.user && (
+            <View style={styles.creatorRow}>
+              <Text style={styles.creatorName} numberOfLines={1}>
+                {video.user.displayName || video.user.username}
+              </Text>
+              {video.user.verified && (
+                <VerifiedBadge size={12} style={styles.verifiedBadge} />
+              )}
+            </View>
+          )}
           <Text style={styles.category}>
             {getCategoryName(video.tags)}
           </Text>
@@ -217,6 +230,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 18,
     marginBottom: 4,
+  },
+  creatorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  creatorName: {
+    color: '#ccc',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  verifiedBadge: {
+    marginLeft: 4,
   },
   category: {
     color: '#999',

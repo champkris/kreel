@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   ImageBackground,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,12 +22,23 @@ import { RootStackParamList } from '../../navigation/AppNavigator';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
-import { Card } from '../../components/common';
+import { Card, VerifiedBadge } from '../../components/common';
+import { clubsAPI } from '../../services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
 const clubCardWidth = (screenWidth - spacing.screenPadding * 2 - spacing.md) / 2;
 
 type TabType = 'feed' | 'allClubs' | 'challenges';
+
+interface ClubData {
+  id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  isOfficial: boolean;
+  memberCount: number;
+  createdAt: string;
+}
 
 // Mock data with images
 const feedPosts = [
@@ -87,6 +99,36 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 export default function ClubsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [activeTab, setActiveTab] = useState<TabType>('feed');
+  const [clubs, setClubs] = useState<ClubData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchClubs();
+  }, []);
+
+  const fetchClubs = async () => {
+    try {
+      setLoading(true);
+      const response = await clubsAPI.getClubs();
+      if (response.success) {
+        setClubs(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching clubs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatMemberCount = (count: number): string => {
+    if (count >= 1000000) {
+      return (count / 1000000).toFixed(1) + 'M';
+    }
+    if (count >= 1000) {
+      return (count / 1000).toFixed(1) + 'K';
+    }
+    return count.toString();
+  };
 
   const handleClubPress = (club: { id: string; name: string; members: string; image?: string }) => {
     navigation.navigate('ClubDetail', {
@@ -229,68 +271,132 @@ export default function ClubsScreen() {
     </ScrollView>
   );
 
-  const renderAllClubs = () => (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      {/* My Clubs */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Clubs</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.myClubsRow}>
-            {/* Create new club */}
-            <TouchableOpacity style={styles.createClubButton} onPress={handleCreateClub}>
-              <Ionicons name="add" size={32} color={colors.textMuted} />
-            </TouchableOpacity>
-            {myClubs.map((club) => (
-              <TouchableOpacity
-                key={club.id}
-                style={styles.myClubItem}
-                onPress={() => handleClubPress(club)}
-              >
-                <View style={styles.myClubAvatar}>
-                  {club.image ? (
-                    <Image source={{ uri: club.image }} style={StyleSheet.absoluteFill} />
-                  ) : (
-                    <LinearGradient
-                      colors={[colors.primary, colors.primaryDark]}
-                      style={StyleSheet.absoluteFill}
-                    />
-                  )}
-                </View>
-                <Text style={styles.myClubName}>{club.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
+  const renderAllClubs = () => {
+    // Separate official and regular clubs
+    const officialClubs = clubs.filter(c => c.isOfficial);
+    const regularClubs = clubs.filter(c => !c.isOfficial);
 
-      {/* All Trending Clubs */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>All Trending Clubs</Text>
-        <View style={styles.clubsGrid}>
-          {trendingClubs.map((club) => (
-            <TouchableOpacity
-              key={club.id}
-              style={styles.clubCard}
-              onPress={() => handleClubPress(club)}
-            >
-              <ImageBackground
-                source={{ uri: club.image }}
-                style={styles.clubImage}
-                imageStyle={{ borderRadius: spacing.borderRadius.md }}
-              >
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.6)']}
-                  style={StyleSheet.absoluteFill}
-                />
-              </ImageBackground>
-              <Text style={styles.clubName}>{club.name}</Text>
-              <Text style={styles.clubMembers}>{club.members} Members</Text>
-            </TouchableOpacity>
-          ))}
+    return (
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* My Clubs */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>My Clubs</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.myClubsRow}>
+              {/* Create new club */}
+              <TouchableOpacity style={styles.createClubButton} onPress={handleCreateClub}>
+                <Ionicons name="add" size={32} color={colors.textMuted} />
+              </TouchableOpacity>
+              {myClubs.map((club) => (
+                <TouchableOpacity
+                  key={club.id}
+                  style={styles.myClubItem}
+                  onPress={() => handleClubPress(club)}
+                >
+                  <View style={styles.myClubAvatar}>
+                    {club.image ? (
+                      <Image source={{ uri: club.image }} style={StyleSheet.absoluteFill} />
+                    ) : (
+                      <LinearGradient
+                        colors={[colors.primary, colors.primaryDark]}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    )}
+                  </View>
+                  <Text style={styles.myClubName}>{club.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
         </View>
-      </View>
-    </ScrollView>
-  );
+
+        {/* Official Clubs */}
+        {officialClubs.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Official Clubs</Text>
+              <VerifiedBadge size={18} />
+            </View>
+            <View style={styles.clubsGrid}>
+              {officialClubs.map((club) => (
+                <TouchableOpacity
+                  key={club.id}
+                  style={styles.clubCard}
+                  onPress={() => handleClubPress({ id: club.id, name: club.name, members: formatMemberCount(club.memberCount), image: club.image })}
+                >
+                  <View style={styles.clubImageContainer}>
+                    <ImageBackground
+                      source={{ uri: club.image || 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=400&h=400&fit=crop' }}
+                      style={styles.clubImage}
+                      imageStyle={{ borderRadius: spacing.borderRadius.md }}
+                    >
+                      <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.6)']}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    </ImageBackground>
+                    <View style={styles.officialBadge}>
+                      <VerifiedBadge size={20} />
+                    </View>
+                  </View>
+                  <View style={styles.clubNameRow}>
+                    <Text style={styles.clubName} numberOfLines={1}>{club.name}</Text>
+                  </View>
+                  <Text style={styles.clubMembers}>{formatMemberCount(club.memberCount)} Members</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* All Clubs */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {loading ? 'Loading Clubs...' : 'All Clubs'}
+          </Text>
+          {loading ? (
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: spacing.xl }} />
+          ) : (
+            <View style={styles.clubsGrid}>
+              {(regularClubs.length > 0 ? regularClubs : trendingClubs).map((club) => {
+                const isApiClub = 'memberCount' in club;
+                const members = isApiClub ? formatMemberCount((club as ClubData).memberCount) : (club as typeof trendingClubs[0]).members;
+                const isOfficial = isApiClub && (club as ClubData).isOfficial;
+
+                return (
+                  <TouchableOpacity
+                    key={club.id}
+                    style={styles.clubCard}
+                    onPress={() => handleClubPress({ id: club.id, name: club.name, members, image: club.image })}
+                  >
+                    <View style={styles.clubImageContainer}>
+                      <ImageBackground
+                        source={{ uri: club.image || 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=400&h=400&fit=crop' }}
+                        style={styles.clubImage}
+                        imageStyle={{ borderRadius: spacing.borderRadius.md }}
+                      >
+                        <LinearGradient
+                          colors={['transparent', 'rgba(0,0,0,0.6)']}
+                          style={StyleSheet.absoluteFill}
+                        />
+                      </ImageBackground>
+                      {isOfficial && (
+                        <View style={styles.officialBadge}>
+                          <VerifiedBadge size={20} />
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.clubName}>{club.name}</Text>
+                    <Text style={styles.clubMembers}>{members} Members</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    );
+  };
 
   const renderChallenges = () => (
     <ScrollView showsVerticalScrollIndicator={false}>
@@ -574,6 +680,12 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
     marginBottom: spacing.md,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
   myClubsRow: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -611,12 +723,28 @@ const styles = StyleSheet.create({
   clubCard: {
     width: clubCardWidth,
   },
+  clubImageContainer: {
+    position: 'relative',
+    marginBottom: spacing.sm,
+  },
   clubImage: {
     width: clubCardWidth,
     height: clubCardWidth,
     borderRadius: spacing.borderRadius.md,
     overflow: 'hidden',
-    marginBottom: spacing.sm,
+  },
+  officialBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 2,
+  },
+  clubNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   clubName: {
     color: colors.textPrimary,
