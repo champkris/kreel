@@ -10,6 +10,7 @@ import {
   Dimensions,
   StatusBar,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -303,11 +304,36 @@ export default function SeriesDetailScreen() {
   const paidCount = series?.episodeCounts?.paid ?? series?.seasons.flatMap(s => s.episodes).filter(e => e.accessType === 'PAID').length ?? 0;
   const totalSeasons = series?.seasons?.length || 1;
 
+  // For web, we need to handle scrolling differently
+  const isWeb = Platform.OS === 'web';
+
+  const ScrollContainer = isWeb ?
+    ({ children, style }: { children: React.ReactNode; style?: any }) => (
+      <div style={{
+        height: '100vh',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        ...style
+      }}>
+        {children}
+      </div>
+    ) :
+    ({ children }: { children: React.ReactNode }) => (
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}
+      >
+        {children}
+      </ScrollView>
+    );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollContainer>
         {/* Video Preview */}
         <View style={styles.videoContainer}>
           <Image
@@ -476,42 +502,44 @@ export default function SeriesDetailScreen() {
             )}
 
             {/* Episodes List */}
-            <View style={{ backgroundColor: '#ff0000', padding: 10, marginBottom: 10 }}>
-              <Text style={{ color: '#fff', fontSize: 16 }}>
-                DEBUG: {currentSeason?.episodes?.length || 0} episodes in season {selectedSeason}
-              </Text>
-            </View>
             {(currentSeason?.episodes?.length || 0) > 0 ? (
-              <View style={{ width: '100%' }}>
+              <View>
                 {currentSeason?.episodes.map((episode, index) => {
                   if (!episode) return null;
                   return (
-                    <View
+                    <TouchableOpacity
                       key={episode.id || String(index)}
-                      style={{
-                        backgroundColor: index % 2 === 0 ? '#333333' : '#444444',
-                        padding: 12,
-                        marginBottom: 12,
-                        borderRadius: 8,
-                        width: '100%',
-                        minHeight: 80,
-                      }}
+                      style={styles.episodeItem}
+                      onPress={() => handleEpisodePress(episode)}
+                      activeOpacity={0.7}
                     >
-                      <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
-                        {String(episode.episodeNumber || 0)}. {String(episode.title || 'Untitled')}
-                      </Text>
-                      <Text style={{ color: '#aaaaaa', fontSize: 14, marginBottom: 8 }}>
-                        {String(episode.description || 'No description')}
-                      </Text>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', display: 'flex' }}>
-                        <Text style={{ color: '#22c55e', fontSize: 12 }}>
-                          {String(episode.accessType || 'FREE')}
-                        </Text>
-                        <Text style={{ color: '#888888', fontSize: 12 }}>
-                          {formatDuration(episode.duration || 0)}
-                        </Text>
+                      <View style={styles.episodeThumbnailContainer}>
+                        <Image
+                          source={{ uri: episode.thumbnail || series?.thumbnail || 'https://via.placeholder.com/400x225' }}
+                          style={styles.episodeThumbnail}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.playOverlay}>
+                          <View style={styles.playButton}>
+                            <Ionicons name="play" size={24} color={colors.textPrimary} />
+                          </View>
+                        </View>
+                        {getAccessBadge(episode.accessType, episode.price)}
                       </View>
-                    </View>
+                      <View style={styles.episodeInfo}>
+                        <View style={styles.episodeHeader}>
+                          <Text style={styles.episodeTitle} numberOfLines={1}>
+                            {episode.episodeNumber}. {episode.title}
+                          </Text>
+                          <Text style={styles.episodeDuration}>{formatDuration(episode.duration)}</Text>
+                        </View>
+                        {episode.description && (
+                          <Text style={styles.episodeDescription} numberOfLines={2}>
+                            {episode.description}
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -519,9 +547,6 @@ export default function SeriesDetailScreen() {
               <View style={styles.emptyTab}>
                 <Ionicons name="film-outline" size={48} color={colors.textMuted} />
                 <Text style={styles.emptyTabText}>No episodes available</Text>
-                <Text style={[styles.emptyTabText, { fontSize: 12, marginTop: 8 }]}>
-                  Seasons: {series?.seasons?.length || 0}, Selected: {selectedSeason}
-                </Text>
               </View>
             )}
           </View>
@@ -542,7 +567,7 @@ export default function SeriesDetailScreen() {
         )}
 
         <View style={{ height: spacing['3xl'] }} />
-      </ScrollView>
+      </ScrollContainer>
     </SafeAreaView>
   );
 }
@@ -558,8 +583,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   videoContainer: {
-    width: screenWidth,
-    height: screenWidth * 9 / 16,
+    width: '100%',
+    aspectRatio: 16 / 9,
     position: 'relative',
   },
   videoPreview: {
