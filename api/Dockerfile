@@ -19,6 +19,9 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
+# Compile seed separately
+RUN npx tsc prisma/seed.ts --outDir prisma --esModuleInterop --skipLibCheck --resolveJsonModule
+
 # Production stage
 FROM node:20-alpine
 
@@ -32,11 +35,12 @@ RUN npm ci --omit=dev
 COPY prisma ./prisma/
 RUN npx prisma generate
 
-# Copy built files from builder
+# Copy built files from builder (including compiled seed)
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma/seed.js ./prisma/
 
 # Expose port
 EXPOSE 3000
 
 # Start the server (migrate, seed, then start)
-CMD ["sh", "-c", "npx prisma migrate deploy && echo 'Running seed...' && npx prisma db seed && echo 'Seed complete!' && npm start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && echo 'Running seed...' && node prisma/seed.js && echo 'Seed complete!' && npm start"]
