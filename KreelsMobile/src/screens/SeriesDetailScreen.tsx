@@ -10,7 +10,6 @@ import {
   Dimensions,
   StatusBar,
   ActivityIndicator,
-  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -512,13 +511,13 @@ export default function SeriesDetailScreen() {
 
             {/* Episodes List */}
             {(currentSeason?.episodes?.length || 0) > 0 ? (
-              <FlatList
-                data={currentSeason?.episodes || []}
-                keyExtractor={(item) => item.id}
-                renderItem={renderEpisode}
-                scrollEnabled={false}
-                contentContainerStyle={styles.episodesList}
-              />
+              <View style={styles.episodesList}>
+                {currentSeason?.episodes.map((episode) => (
+                  <View key={episode.id}>
+                    {renderEpisode({ item: episode })}
+                  </View>
+                ))}
+              </View>
             ) : (
               <View style={styles.emptyTab}>
                 <Ionicons name="film-outline" size={48} color={colors.textMuted} />
