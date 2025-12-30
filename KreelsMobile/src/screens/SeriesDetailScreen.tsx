@@ -20,6 +20,7 @@ import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { VerifiedBadge, BadgeRow } from '../components/common';
 import type { BadgeData } from '../components/common';
+import { seriesAPI } from '../services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -52,43 +53,61 @@ interface SeriesData {
   title: string;
   description?: string;
   thumbnail?: string;
-  year: number;
-  rating: string;
-  totalSeasons: number;
-  totalEpisodes: number;
+  banner?: string;
+  category?: string;
+  tags?: string[];
+  price?: number;
+  isPaid?: boolean;
   freeEpisodeCount: number;
-  genres: string[];
+  totalEpisodes: number;
+  duration?: number;
+  language?: string;
   creator: {
     id: string;
+    username?: string;
     displayName: string;
     avatar?: string;
-    verified: boolean;
+    bio?: string;
+    followersCount?: number;
+    isVerified: boolean;
     badges?: BadgeData[];
   };
+  episodeCounts: {
+    free: number;
+    locked: number;
+    paid: number;
+    total: number;
+  };
   seasons: Season[];
+  createdAt?: string;
+  publishedAt?: string;
 }
 
-// Mock series data for demo
+// Mock series data for demo (fallback)
 const mockSeriesData: SeriesData = {
   id: '1',
   title: 'The Rising Star',
   description: 'Follow the journey of a small-town girl who dreams of becoming a K-pop idol. Through hardship, friendship, and determination, she navigates the competitive entertainment industry.',
   thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=450&fit=crop',
-  year: 2025,
-  rating: '16+',
-  totalSeasons: 2,
-  totalEpisodes: 20,
+  category: 'Drama',
+  tags: ['Drama', 'Romance', 'Music'],
   freeEpisodeCount: 3,
-  genres: ['Drama', 'Romance', 'Music'],
+  totalEpisodes: 8,
   creator: {
     id: '1',
     displayName: 'Star Entertainment',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    verified: true,
+    isVerified: true,
     badges: [
       { id: '1', name: 'Official', type: 'OFFICIAL', icon: '✓' },
       { id: '2', name: 'Top Creator', type: 'TOP_CONTRIBUTOR', icon: '⭐' },
     ],
+  },
+  episodeCounts: {
+    free: 3,
+    locked: 3,
+    paid: 2,
+    total: 8,
   },
   seasons: [
     {
@@ -102,15 +121,6 @@ const mockSeriesData: SeriesData = {
         { id: 'e4', episodeNumber: 4, title: 'Rivalry', description: 'A fierce rival emerges, threatening Ji-yeon\'s position in the group.', duration: 44, accessType: 'LOCKED', thumbnail: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&h=170&fit=crop' },
         { id: 'e5', episodeNumber: 5, title: 'The Scandal', description: 'A media scandal puts the entire group\'s future at risk.', duration: 46, accessType: 'LOCKED', thumbnail: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=170&fit=crop' },
         { id: 'e6', episodeNumber: 6, title: 'Comeback', description: 'Against all odds, the group prepares for their comeback stage.', duration: 50, accessType: 'PAID', price: 2.99, thumbnail: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=170&fit=crop' },
-      ],
-    },
-    {
-      id: 's2',
-      seasonNumber: 2,
-      title: 'Season 2',
-      episodes: [
-        { id: 'e7', episodeNumber: 1, title: 'New Beginnings', description: 'A year later, Ji-yeon faces new challenges as a debuted idol.', duration: 45, accessType: 'LOCKED', thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=170&fit=crop' },
-        { id: 'e8', episodeNumber: 2, title: 'World Tour', description: 'The group embarks on their first international tour.', duration: 48, accessType: 'PAID', price: 2.99, thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&h=170&fit=crop' },
       ],
     },
   ],
@@ -134,12 +144,73 @@ export default function SeriesDetailScreen() {
   }, [id]);
 
   const fetchSeriesDetails = async () => {
-    // TODO: Replace with actual API call
-    // const response = await seriesAPI.getSeries(id);
-    setTimeout(() => {
+    try {
+      const response = await seriesAPI.getSeriesById(id);
+      if (response.success && response.data) {
+        // Transform API response to match our interface
+        const apiData = response.data;
+        const transformedData: SeriesData = {
+          id: apiData.id,
+          title: apiData.title,
+          description: apiData.description,
+          thumbnail: apiData.thumbnail,
+          banner: apiData.banner,
+          category: apiData.category,
+          tags: apiData.tags || [],
+          price: apiData.price ? Number(apiData.price) : undefined,
+          isPaid: apiData.isPaid,
+          freeEpisodeCount: apiData.freeEpisodeCount || 0,
+          totalEpisodes: apiData.totalEpisodes || 0,
+          duration: apiData.duration,
+          language: apiData.language,
+          creator: {
+            id: apiData.creator.id,
+            username: apiData.creator.username,
+            displayName: apiData.creator.displayName,
+            avatar: apiData.creator.avatar,
+            bio: apiData.creator.bio,
+            followersCount: apiData.creator.followersCount,
+            isVerified: apiData.creator.isVerified || false,
+            badges: apiData.creator.badges?.map((b: any) => ({
+              id: b.id,
+              name: b.name,
+              type: b.type,
+              icon: b.icon,
+              description: b.description,
+              color: b.color,
+            })),
+          },
+          episodeCounts: apiData.episodeCounts || { free: 0, locked: 0, paid: 0, total: 0 },
+          seasons: apiData.seasons?.map((s: any) => ({
+            id: `s${s.seasonNumber}`,
+            seasonNumber: s.seasonNumber,
+            title: `Season ${s.seasonNumber}`,
+            episodes: s.episodes?.map((ep: any) => ({
+              id: ep.id,
+              episodeNumber: ep.episodeNumber || 1,
+              title: ep.title,
+              description: ep.description,
+              duration: ep.duration ? Math.floor(ep.duration / 60) : 0, // Convert seconds to minutes
+              thumbnail: ep.thumbnailUrl,
+              accessType: ep.accessType || 'FREE',
+              price: ep.price ? Number(ep.price) : undefined,
+            })) || [],
+          })) || [],
+          createdAt: apiData.createdAt,
+          publishedAt: apiData.publishedAt,
+        };
+        setSeries(transformedData);
+      } else {
+        // Fallback to mock data
+        setSeries(mockSeriesData);
+      }
+    } catch (error) {
+      console.error('Error fetching series:', error);
+      // Fallback to mock data
       setSeries(mockSeriesData);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const formatDuration = (minutes: number): string => {
@@ -246,10 +317,11 @@ export default function SeriesDetailScreen() {
     );
   }
 
-  // Count episodes by type
-  const freeCount = series?.seasons.flatMap(s => s.episodes).filter(e => e.accessType === 'FREE').length || 0;
-  const lockedCount = series?.seasons.flatMap(s => s.episodes).filter(e => e.accessType === 'LOCKED').length || 0;
-  const paidCount = series?.seasons.flatMap(s => s.episodes).filter(e => e.accessType === 'PAID').length || 0;
+  // Episode counts from API or calculated from seasons
+  const freeCount = series?.episodeCounts?.free ?? series?.seasons.flatMap(s => s.episodes).filter(e => e.accessType === 'FREE').length ?? 0;
+  const lockedCount = series?.episodeCounts?.locked ?? series?.seasons.flatMap(s => s.episodes).filter(e => e.accessType === 'LOCKED').length ?? 0;
+  const paidCount = series?.episodeCounts?.paid ?? series?.seasons.flatMap(s => s.episodes).filter(e => e.accessType === 'PAID').length ?? 0;
+  const totalSeasons = series?.seasons?.length || 1;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -287,11 +359,11 @@ export default function SeriesDetailScreen() {
           <Text style={styles.seriesTitle}>{series?.title || paramTitle}</Text>
 
           <View style={styles.metaRow}>
-            <Text style={styles.metaText}>{series?.year}</Text>
+            <Text style={styles.metaText}>{new Date(series?.publishedAt || series?.createdAt || Date.now()).getFullYear()}</Text>
             <View style={styles.ratingBadge}>
-              <Text style={styles.ratingText}>{series?.rating}</Text>
+              <Text style={styles.ratingText}>{series?.category || 'All'}</Text>
             </View>
-            <Text style={styles.metaText}>{series?.totalSeasons} Seasons</Text>
+            <Text style={styles.metaText}>{totalSeasons} Season{totalSeasons !== 1 ? 's' : ''}</Text>
           </View>
 
           {/* Episode Count Summary */}
@@ -330,23 +402,25 @@ export default function SeriesDetailScreen() {
             <TouchableOpacity style={styles.creatorRow} onPress={handleCreatorPress}>
               <Text style={styles.creatorLabel}>Creator: </Text>
               <Text style={styles.creatorName}>{series.creator.displayName}</Text>
-              {series.creator.verified && (
+              {series.creator.isVerified && (
                 <VerifiedBadge size={14} style={{ marginLeft: 4 }} />
               )}
             </TouchableOpacity>
           )}
 
-          {/* Genres */}
-          <View style={styles.genresRow}>
-            {series?.genres.map((genre, index) => (
-              <React.Fragment key={genre}>
-                <Text style={styles.genreText}>{genre}</Text>
-                {index < series.genres.length - 1 && (
-                  <Text style={styles.genreDot}>•</Text>
-                )}
-              </React.Fragment>
-            ))}
-          </View>
+          {/* Genres/Tags */}
+          {series?.tags && series.tags.length > 0 && (
+            <View style={styles.genresRow}>
+              {series.tags.map((tag, index) => (
+                <React.Fragment key={tag}>
+                  <Text style={styles.genreText}>{tag}</Text>
+                  {index < series.tags!.length - 1 && (
+                    <Text style={styles.genreDot}>•</Text>
+                  )}
+                </React.Fragment>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Action Buttons */}

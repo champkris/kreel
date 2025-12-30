@@ -268,4 +268,24 @@ export const clubsAPI = {
   },
 };
 
+// Series API
+export const seriesAPI = {
+  getSeries: async (page = 1, limit = 20, category?: string) => {
+    let url = `/series?limit=${limit}&offset=${(page - 1) * limit}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  getSeriesById: async (seriesId: string) => {
+    const response = await api.get(`/series/${seriesId}`);
+    return response.data;
+  },
+
+  getCreatorSeries: async (creatorId: string, page = 1, limit = 20) => {
+    const response = await api.get(`/series?creatorId=${creatorId}&limit=${limit}&offset=${(page - 1) * limit}`);
+    return response.data;
+  },
+};
+
 export default api;

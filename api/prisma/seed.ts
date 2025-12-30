@@ -316,10 +316,12 @@ async function main() {
 
   // Create Series
   console.log('Creating series...');
-  const series = await prisma.series.create({
+
+  // Series 1: The Midnight Chronicles (Thriller)
+  const series1 = await prisma.series.create({
     data: {
       title: 'The Midnight Chronicles',
-      description: 'A gripping thriller series about a detective solving mysteries in a noir city.',
+      description: 'A gripping thriller series about a detective solving mysteries in a noir city. Follow Detective Noir as he unravels a web of deceit and danger.',
       thumbnail: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=600&fit=crop',
       banner: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&h=200&fit=crop',
       category: 'Thriller',
@@ -333,10 +335,501 @@ async function main() {
     }
   });
 
-  // Create Videos
-  console.log('Creating videos...');
+  // Series 2: Love in Seoul (Romance)
+  const series2 = await prisma.series.create({
+    data: {
+      title: 'Love in Seoul',
+      description: 'A heartwarming K-drama style romance about two strangers who meet by chance and discover that fate has more in store for them.',
+      thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=600&fit=crop',
+      banner: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=200&fit=crop',
+      category: 'Romance',
+      tags: ['romance', 'kdrama', 'love', 'seoul'],
+      creatorId: professionalUser.id,
+      isPublished: true,
+      totalEpisodes: 5,
+      price: 3.99,
+      isPaid: true,
+      freeEpisodeCount: 2
+    }
+  });
+
+  // Series 3: Rising Star (Music Drama)
+  const series3 = await prisma.series.create({
+    data: {
+      title: 'Rising Star',
+      description: 'Follow the journey of Ji-yeon, a small-town girl with big dreams of becoming a K-pop idol. Through hardship and determination, she fights for her dream.',
+      thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=600&fit=crop',
+      banner: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&h=200&fit=crop',
+      category: 'Drama',
+      tags: ['kpop', 'music', 'drama', 'idol'],
+      creatorId: individualUser.id,
+      isPublished: true,
+      totalEpisodes: 5,
+      price: 2.99,
+      isPaid: true,
+      freeEpisodeCount: 3
+    }
+  });
+
+  // Series 4: Corporate Wars (Business Drama)
+  const series4 = await prisma.series.create({
+    data: {
+      title: 'Corporate Wars',
+      description: 'In the cutthroat world of tech startups, alliances shift and betrayals happen. Who will rise to the top?',
+      thumbnail: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400&h=600&fit=crop',
+      banner: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=200&fit=crop',
+      category: 'Drama',
+      tags: ['business', 'corporate', 'drama', 'thriller'],
+      creatorId: professionalUser.id,
+      isPublished: true,
+      totalEpisodes: 4,
+      price: 5.99,
+      isPaid: true,
+      freeEpisodeCount: 1
+    }
+  });
+
+  // Series 5: Haunted High (Horror)
+  const series5 = await prisma.series.create({
+    data: {
+      title: 'Haunted High',
+      description: 'Strange things are happening at Greenwood High. A group of students must uncover the dark secrets of their school before it is too late.',
+      thumbnail: 'https://images.unsplash.com/photo-1509248961725-aec71c0e100a?w=400&h=600&fit=crop',
+      banner: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&h=200&fit=crop',
+      category: 'Horror',
+      tags: ['horror', 'mystery', 'highschool', 'supernatural'],
+      creatorId: officialCreator.id,
+      isPublished: true,
+      totalEpisodes: 4,
+      price: 3.99,
+      isPaid: true,
+      freeEpisodeCount: 1
+    }
+  });
+
+  // Create Episodes for all series
+  console.log('Creating episodes...');
+
+  // Series 1 Episodes: The Midnight Chronicles
+  const series1Episodes = await Promise.all([
+    prisma.video.create({
+      data: {
+        title: 'The Beginning',
+        description: 'Detective Noir receives a mysterious case that will change everything. A wealthy businessman is found dead, and nothing is as it seems.',
+        thumbnail: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/midnight-ep1.mp4',
+        duration: 1800, // 30 min
+        creatorId: officialCreator.id,
+        seriesId: series1.id,
+        episodeNumber: 1,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 125000,
+        likeCount: 8900
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'The Clue',
+        description: 'A cryptic message leads Noir deeper into the conspiracy. The victim had enemies everywhere, but who wanted him dead?',
+        thumbnail: 'https://images.unsplash.com/photo-1533928298208-27ff66555d8d?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/midnight-ep2.mp4',
+        duration: 1920, // 32 min
+        creatorId: officialCreator.id,
+        seriesId: series1.id,
+        episodeNumber: 2,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 98000,
+        likeCount: 7200
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Betrayal',
+        description: 'Noir discovers that someone close has been hiding the truth. Trust no one in this city of shadows.',
+        thumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/midnight-ep3.mp4',
+        duration: 2100, // 35 min
+        creatorId: officialCreator.id,
+        seriesId: series1.id,
+        episodeNumber: 3,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 60,
+        viewCount: 76000,
+        likeCount: 5800
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'The Chase',
+        description: 'With the killer closing in, Noir must race against time. Every second counts in this deadly game of cat and mouse.',
+        thumbnail: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/midnight-ep4.mp4',
+        duration: 2400, // 40 min
+        creatorId: officialCreator.id,
+        seriesId: series1.id,
+        episodeNumber: 4,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 60,
+        viewCount: 65000,
+        likeCount: 4900
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Final Justice',
+        description: 'The explosive finale. All secrets are revealed as Noir confronts the mastermind behind it all.',
+        thumbnail: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/midnight-ep5.mp4',
+        duration: 2700, // 45 min
+        creatorId: officialCreator.id,
+        seriesId: series1.id,
+        episodeNumber: 5,
+        isPublished: true,
+        accessType: 'PAID',
+        price: 1.99,
+        isPaid: true,
+        isFree: false,
+        previewDuration: 60,
+        viewCount: 52000,
+        likeCount: 4200
+      }
+    })
+  ]);
+
+  // Series 2 Episodes: Love in Seoul
+  const series2Episodes = await Promise.all([
+    prisma.video.create({
+      data: {
+        title: 'Chance Encounter',
+        description: 'Min-ji and Jun-ho bump into each other at a coffee shop. Little do they know, this is just the beginning.',
+        thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/seoul-ep1.mp4',
+        duration: 1500, // 25 min
+        creatorId: professionalUser.id,
+        seriesId: series2.id,
+        episodeNumber: 1,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 89000,
+        likeCount: 12500
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Second Meeting',
+        description: 'They meet again at a friend\'s wedding. Is this fate? Min-ji starts to wonder if the universe is trying to tell her something.',
+        thumbnail: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/seoul-ep2.mp4',
+        duration: 1620, // 27 min
+        creatorId: professionalUser.id,
+        seriesId: series2.id,
+        episodeNumber: 2,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 78000,
+        likeCount: 11200
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'The Confession',
+        description: 'Under the cherry blossoms, Jun-ho finally gathers the courage to confess his feelings.',
+        thumbnail: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/seoul-ep3.mp4',
+        duration: 1800, // 30 min
+        creatorId: professionalUser.id,
+        seriesId: series2.id,
+        episodeNumber: 3,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 45,
+        viewCount: 67000,
+        likeCount: 9800
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Misunderstanding',
+        description: 'A misunderstanding threatens to tear them apart. Will they find their way back to each other?',
+        thumbnail: 'https://images.unsplash.com/photo-1474552226712-ac0f0961a954?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/seoul-ep4.mp4',
+        duration: 1740, // 29 min
+        creatorId: professionalUser.id,
+        seriesId: series2.id,
+        episodeNumber: 4,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 45,
+        viewCount: 58000,
+        likeCount: 8500
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Forever Yours',
+        description: 'The heartwarming finale where love conquers all. A perfect ending to a beautiful story.',
+        thumbnail: 'https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/seoul-ep5.mp4',
+        duration: 2100, // 35 min
+        creatorId: professionalUser.id,
+        seriesId: series2.id,
+        episodeNumber: 5,
+        isPublished: true,
+        accessType: 'PAID',
+        price: 1.49,
+        isPaid: true,
+        isFree: false,
+        previewDuration: 45,
+        viewCount: 45000,
+        likeCount: 7200
+      }
+    })
+  ]);
+
+  // Series 3 Episodes: Rising Star
+  const series3Episodes = await Promise.all([
+    prisma.video.create({
+      data: {
+        title: 'The Audition',
+        description: 'Ji-yeon takes her first step towards her dream by attending a major audition. Will she make the cut?',
+        thumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/star-ep1.mp4',
+        duration: 1680, // 28 min
+        creatorId: individualUser.id,
+        seriesId: series3.id,
+        episodeNumber: 1,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 156000,
+        likeCount: 18900
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Training Days',
+        description: 'The grueling training begins. Ji-yeon struggles to keep up with her talented peers.',
+        thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/star-ep2.mp4',
+        duration: 1560, // 26 min
+        creatorId: individualUser.id,
+        seriesId: series3.id,
+        episodeNumber: 2,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 134000,
+        likeCount: 16200
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'First Performance',
+        description: 'Ji-yeon faces her first public performance. The pressure is immense, but so is her determination.',
+        thumbnail: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/star-ep3.mp4',
+        duration: 1920, // 32 min
+        creatorId: individualUser.id,
+        seriesId: series3.id,
+        episodeNumber: 3,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 112000,
+        likeCount: 14500
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Rivalry',
+        description: 'A fierce rival emerges, threatening Ji-yeon\'s position in the group. The competition heats up.',
+        thumbnail: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/star-ep4.mp4',
+        duration: 1740, // 29 min
+        creatorId: individualUser.id,
+        seriesId: series3.id,
+        episodeNumber: 4,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 45,
+        viewCount: 89000,
+        likeCount: 11800
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Debut',
+        description: 'The moment Ji-yeon has been waiting for. Against all odds, will her dreams finally come true?',
+        thumbnail: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/star-ep5.mp4',
+        duration: 2400, // 40 min
+        creatorId: individualUser.id,
+        seriesId: series3.id,
+        episodeNumber: 5,
+        isPublished: true,
+        accessType: 'PAID',
+        price: 0.99,
+        isPaid: true,
+        isFree: false,
+        previewDuration: 60,
+        viewCount: 72000,
+        likeCount: 9500
+      }
+    })
+  ]);
+
+  // Series 4 Episodes: Corporate Wars
+  const series4Episodes = await Promise.all([
+    prisma.video.create({
+      data: {
+        title: 'The Pitch',
+        description: 'Two rival startups compete for the same investor. In Silicon Valley, only one can survive.',
+        thumbnail: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/corp-ep1.mp4',
+        duration: 2100, // 35 min
+        creatorId: professionalUser.id,
+        seriesId: series4.id,
+        episodeNumber: 1,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 67000,
+        likeCount: 5400
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Hostile Takeover',
+        description: 'A shocking acquisition attempt sends shockwaves through the industry. Who is pulling the strings?',
+        thumbnail: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/corp-ep2.mp4',
+        duration: 2280, // 38 min
+        creatorId: professionalUser.id,
+        seriesId: series4.id,
+        episodeNumber: 2,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 60,
+        viewCount: 54000,
+        likeCount: 4200
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'The Leak',
+        description: 'Confidential information is leaked to the press. Someone on the inside is a traitor.',
+        thumbnail: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/corp-ep3.mp4',
+        duration: 2040, // 34 min
+        creatorId: professionalUser.id,
+        seriesId: series4.id,
+        episodeNumber: 3,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 60,
+        viewCount: 45000,
+        likeCount: 3600
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'IPO Day',
+        description: 'The dramatic conclusion. Everything rides on the biggest IPO in tech history.',
+        thumbnail: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/corp-ep4.mp4',
+        duration: 2700, // 45 min
+        creatorId: professionalUser.id,
+        seriesId: series4.id,
+        episodeNumber: 4,
+        isPublished: true,
+        accessType: 'PAID',
+        price: 2.49,
+        isPaid: true,
+        isFree: false,
+        previewDuration: 60,
+        viewCount: 38000,
+        likeCount: 3100
+      }
+    })
+  ]);
+
+  // Series 5 Episodes: Haunted High
+  const series5Episodes = await Promise.all([
+    prisma.video.create({
+      data: {
+        title: 'Welcome to Greenwood',
+        description: 'New student Emma arrives at Greenwood High. But something feels very wrong about this school.',
+        thumbnail: 'https://images.unsplash.com/photo-1509248961725-aec71c0e100a?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/haunted-ep1.mp4',
+        duration: 1800, // 30 min
+        creatorId: officialCreator.id,
+        seriesId: series5.id,
+        episodeNumber: 1,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 98000,
+        likeCount: 8200
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'The Disappearance',
+        description: 'A student goes missing. Emma and her friends begin to investigate the school\'s dark past.',
+        thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/haunted-ep2.mp4',
+        duration: 1920, // 32 min
+        creatorId: officialCreator.id,
+        seriesId: series5.id,
+        episodeNumber: 2,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 45,
+        viewCount: 82000,
+        likeCount: 7100
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'The Secret Room',
+        description: 'A hidden room is discovered beneath the school. What horrors lie within?',
+        thumbnail: 'https://images.unsplash.com/photo-1551269901-5c5e14c25df7?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/haunted-ep3.mp4',
+        duration: 2040, // 34 min
+        creatorId: officialCreator.id,
+        seriesId: series5.id,
+        episodeNumber: 3,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 45,
+        viewCount: 71000,
+        likeCount: 6200
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Final Night',
+        description: 'The terrifying finale. Emma must face the evil head-on to save her friends and end the nightmare.',
+        thumbnail: 'https://images.unsplash.com/photo-1604171099250-0f1c02a2c3b8?w=400&h=225&fit=crop',
+        videoUrl: 'https://sample-videos.com/haunted-ep4.mp4',
+        duration: 2400, // 40 min
+        creatorId: officialCreator.id,
+        seriesId: series5.id,
+        episodeNumber: 4,
+        isPublished: true,
+        accessType: 'PAID',
+        price: 1.99,
+        isPaid: true,
+        isFree: false,
+        previewDuration: 60,
+        viewCount: 62000,
+        likeCount: 5400
+      }
+    })
+  ]);
+
+  // Create standalone videos
+  console.log('Creating standalone videos...');
   const videos = await Promise.all([
-    // Free video
     prisma.video.create({
       data: {
         title: 'The Last Train Home',
@@ -351,7 +844,6 @@ async function main() {
         likeCount: 892
       }
     }),
-    // Paid video
     prisma.video.create({
       data: {
         title: 'Shadows of Tomorrow',
@@ -370,7 +862,6 @@ async function main() {
         likeCount: 1234
       }
     }),
-    // Locked video (requires subscription)
     prisma.video.create({
       data: {
         title: 'Behind the Scenes: Drama Guild',
@@ -384,59 +875,6 @@ async function main() {
         previewDuration: 60,
         viewCount: 3200,
         likeCount: 567
-      }
-    }),
-    // Series episodes
-    prisma.video.create({
-      data: {
-        title: 'The Midnight Chronicles - Ep 1: The Beginning',
-        description: 'Detective Noir receives a mysterious case that will change everything.',
-        thumbnail: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=600&fit=crop',
-        videoUrl: 'https://sample-videos.com/midnight-ep1.mp4',
-        duration: 300,
-        creatorId: officialCreator.id,
-        seriesId: series.id,
-        episodeNumber: 1,
-        isPublished: true,
-        accessType: 'FREE',
-        viewCount: 25000,
-        likeCount: 2100
-      }
-    }),
-    prisma.video.create({
-      data: {
-        title: 'The Midnight Chronicles - Ep 2: The Clue',
-        description: 'A cryptic message leads Noir deeper into the conspiracy.',
-        thumbnail: 'https://images.unsplash.com/photo-1533928298208-27ff66555d8d?w=400&h=600&fit=crop',
-        videoUrl: 'https://sample-videos.com/midnight-ep2.mp4',
-        duration: 320,
-        creatorId: officialCreator.id,
-        seriesId: series.id,
-        episodeNumber: 2,
-        isPublished: true,
-        accessType: 'FREE',
-        viewCount: 18000,
-        likeCount: 1650
-      }
-    }),
-    prisma.video.create({
-      data: {
-        title: 'The Midnight Chronicles - Ep 3: Betrayal',
-        description: 'Noir discovers that someone close has been hiding the truth.',
-        thumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop',
-        videoUrl: 'https://sample-videos.com/midnight-ep3.mp4',
-        duration: 350,
-        creatorId: officialCreator.id,
-        seriesId: series.id,
-        episodeNumber: 3,
-        isPublished: true,
-        accessType: 'PAID',
-        price: 0.99,
-        isPaid: true,
-        isFree: false,
-        previewDuration: 30,
-        viewCount: 12000,
-        likeCount: 980
       }
     })
   ]);
