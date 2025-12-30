@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -129,7 +130,7 @@ const mockSeriesData: SeriesData = {
 type TabType = 'episodes' | 'moreLikeThis' | 'trailers';
 
 export default function SeriesDetailScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<{ SeriesDetail: SeriesDetailParams }, 'SeriesDetail'>>();
   const { id, title: paramTitle, thumbnail: paramThumbnail } = route.params;
 
@@ -145,10 +146,14 @@ export default function SeriesDetailScreen() {
 
   const fetchSeriesDetails = async () => {
     try {
+      console.log('Fetching series details for ID:', id);
       const response = await seriesAPI.getSeriesById(id);
+      console.log('API Response:', JSON.stringify(response, null, 2));
+
       if (response.success && response.data) {
         // Transform API response to match our interface
         const apiData = response.data;
+        console.log('Seasons from API:', apiData.seasons?.length, 'seasons');
         const transformedData: SeriesData = {
           id: apiData.id,
           title: apiData.title,
@@ -199,14 +204,18 @@ export default function SeriesDetailScreen() {
           createdAt: apiData.createdAt,
           publishedAt: apiData.publishedAt,
         };
+        console.log('Transformed data seasons:', transformedData.seasons?.length);
+        console.log('Transformed episodes:', transformedData.seasons?.[0]?.episodes?.length);
         setSeries(transformedData);
       } else {
         // Fallback to mock data
+        console.log('API returned no data, using mock data');
         setSeries(mockSeriesData);
       }
     } catch (error) {
       console.error('Error fetching series:', error);
       // Fallback to mock data
+      console.log('API error, using mock data');
       setSeries(mockSeriesData);
     } finally {
       setLoading(false);
@@ -271,6 +280,12 @@ export default function SeriesDetailScreen() {
   };
 
   const currentSeason = series?.seasons.find(s => s.seasonNumber === selectedSeason);
+
+  // Debug logging
+  console.log('Series seasons:', series?.seasons?.length);
+  console.log('Selected season:', selectedSeason);
+  console.log('Current season:', currentSeason?.seasonNumber);
+  console.log('Episodes in current season:', currentSeason?.episodes?.length);
 
   const renderEpisode = ({ item: episode }: { item: Episode }) => (
     <TouchableOpacity
@@ -482,21 +497,33 @@ export default function SeriesDetailScreen() {
         {activeTab === 'episodes' && (
           <View style={styles.episodesSection}>
             {/* Season Selector */}
-            <View style={styles.seasonSelector}>
-              <TouchableOpacity style={styles.seasonDropdown}>
-                <Text style={styles.seasonText}>Season {selectedSeason}</Text>
-                <Ionicons name="chevron-down" size={20} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
+            {(series?.seasons?.length || 0) > 0 && (
+              <View style={styles.seasonSelector}>
+                <TouchableOpacity style={styles.seasonDropdown}>
+                  <Text style={styles.seasonText}>Season {selectedSeason}</Text>
+                  <Ionicons name="chevron-down" size={20} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Episodes List */}
-            <FlatList
-              data={currentSeason?.episodes || []}
-              keyExtractor={(item) => item.id}
-              renderItem={renderEpisode}
-              scrollEnabled={false}
-              contentContainerStyle={styles.episodesList}
-            />
+            {(currentSeason?.episodes?.length || 0) > 0 ? (
+              <FlatList
+                data={currentSeason?.episodes || []}
+                keyExtractor={(item) => item.id}
+                renderItem={renderEpisode}
+                scrollEnabled={false}
+                contentContainerStyle={styles.episodesList}
+              />
+            ) : (
+              <View style={styles.emptyTab}>
+                <Ionicons name="film-outline" size={48} color={colors.textMuted} />
+                <Text style={styles.emptyTabText}>No episodes available</Text>
+                <Text style={[styles.emptyTabText, { fontSize: 12, marginTop: 8 }]}>
+                  Seasons: {series?.seasons?.length || 0}, Selected: {selectedSeason}
+                </Text>
+              </View>
+            )}
           </View>
         )}
 

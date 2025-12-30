@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import VideoCard from '../components/video/VideoCard';
 import VideoPlayer from '../components/video/VideoPlayer';
 import SwipeableVideoPlayer from '../components/video/SwipeableVideoPlayer';
 import { Video } from '../types';
+import { seriesAPI } from '../services/api';
 import {
   mockVideos,
   getVideosByCategory,
@@ -55,10 +56,25 @@ const continueWatching = mockVideos.slice(0, 4).map((video, index) => ({
   totalEpisodes: 20,
 }));
 
-const seriesData = mockVideos.slice(0, 6).map((video, index) => ({
+// Fallback mock series data
+const mockSeriesData = mockVideos.slice(0, 6).map((video, index) => ({
   ...video,
   badge: index === 0 ? 'Free' : index < 3 ? 'Premium' : 'Exclusive',
 }));
+
+interface SeriesItem {
+  id: string;
+  title: string;
+  thumbnail?: string;
+  thumbnailUrl?: string; // For backward compatibility with mock data
+  episodeCounts?: {
+    free: number;
+    locked: number;
+    paid: number;
+    total: number;
+  };
+  badge?: string;
+}
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -68,6 +84,35 @@ export default function HomeScreen() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [showSwipeablePlayer, setShowSwipeablePlayer] = useState(false);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+  const [seriesData, setSeriesData] = useState<SeriesItem[]>([]);
+
+  useEffect(() => {
+    fetchSeries();
+  }, []);
+
+  const fetchSeries = async () => {
+    try {
+      const response = await seriesAPI.getSeries(1, 10);
+      console.log('Series API response:', response);
+      if (response.success && response.data?.length > 0) {
+        const series = response.data.map((s: any, index: number) => ({
+          id: s.id,
+          title: s.title,
+          thumbnail: s.thumbnail,
+          thumbnailUrl: s.thumbnail, // For compatibility
+          episodeCounts: s.episodeCounts,
+          badge: s.episodeCounts?.free > 0 ? 'Free' : s.isPaid ? 'Premium' : 'Exclusive',
+        }));
+        setSeriesData(series);
+      } else {
+        // Fallback to mock data
+        setSeriesData(mockSeriesData);
+      }
+    } catch (error) {
+      console.error('Error fetching series:', error);
+      setSeriesData(mockSeriesData);
+    }
+  };
 
   const tabs: TabType[] = ['Following', 'Trending', 'Drama', 'Live'];
 
@@ -91,11 +136,11 @@ export default function HomeScreen() {
     setShowSwipeablePlayer(true);
   };
 
-  const handleSeriesPress = (series: Video & { badge?: string }) => {
+  const handleSeriesPress = (series: SeriesItem) => {
     navigation.navigate('SeriesDetail', {
       id: series.id,
       title: series.title,
-      thumbnail: series.thumbnailUrl,
+      thumbnail: series.thumbnail,
     });
   };
 
@@ -287,7 +332,7 @@ export default function HomeScreen() {
           >
             <View style={styles.seriesImage}>
               <Image
-                source={{ uri: item.thumbnailUrl }}
+                source={{ uri: item.thumbnail || item.thumbnailUrl }}
                 style={StyleSheet.absoluteFill}
                 resizeMode="cover"
               />
@@ -308,7 +353,9 @@ export default function HomeScreen() {
             <Text style={styles.seriesTitle} numberOfLines={2}>
               {item.title}
             </Text>
-            <Text style={styles.seriesViews}>{formatViews(item.views)} views</Text>
+            <Text style={styles.seriesViews}>
+              {item.episodeCounts?.total || 0} episodes
+            </Text>
           </TouchableOpacity>
         )}
       />
