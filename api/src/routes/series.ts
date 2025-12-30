@@ -8,7 +8,7 @@ router.get('/', async (req, res) => {
   try {
     const { category, creatorId, limit = '20', offset = '0' } = req.query;
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       isPublished: true,
       isActive: true,
     };
@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
             },
           },
         },
-        videos: {
+        episodes: {
           where: {
             isPublished: true,
           },
@@ -56,7 +56,7 @@ router.get('/', async (req, res) => {
 
     // Transform data to include episode counts by access type
     const transformedSeries = series.map((s) => {
-      const episodes = s.videos;
+      const episodes = s.episodes;
       const freeCount = episodes.filter((e) => e.accessType === 'FREE').length;
       const lockedCount = episodes.filter((e) => e.accessType === 'LOCKED').length;
       const paidCount = episodes.filter((e) => e.accessType === 'PAID').length;
@@ -131,7 +131,6 @@ router.get('/:id', async (req, res) => {
             displayName: true,
             avatar: true,
             bio: true,
-            followersCount: true,
             badges: {
               include: {
                 badge: true,
@@ -139,7 +138,7 @@ router.get('/:id', async (req, res) => {
             },
           },
         },
-        videos: {
+        episodes: {
           where: {
             isPublished: true,
           },
@@ -151,7 +150,7 @@ router.get('/:id', async (req, res) => {
             id: true,
             title: true,
             description: true,
-            thumbnailUrl: true,
+            thumbnail: true,
             videoUrl: true,
             duration: true,
             episodeNumber: true,
@@ -175,7 +174,7 @@ router.get('/:id', async (req, res) => {
     }
 
     // Calculate episode counts by access type
-    const episodes = series.videos;
+    const episodes = series.episodes;
     const freeCount = episodes.filter((e) => e.accessType === 'FREE').length;
     const lockedCount = episodes.filter((e) => e.accessType === 'LOCKED').length;
     const paidCount = episodes.filter((e) => e.accessType === 'PAID').length;
@@ -202,7 +201,6 @@ router.get('/:id', async (req, res) => {
       type: ub.badge.type,
       icon: ub.badge.icon,
       description: ub.badge.description,
-      color: ub.badge.color,
       earnedAt: ub.earnedAt,
     }));
 
@@ -226,7 +224,6 @@ router.get('/:id', async (req, res) => {
         displayName: series.creator.displayName,
         avatar: series.creator.avatar,
         bio: series.creator.bio,
-        followersCount: series.creator.followersCount,
         isVerified,
         badges: creatorBadges,
       },
@@ -239,8 +236,20 @@ router.get('/:id', async (req, res) => {
       seasons: Object.entries(seasons).map(([seasonNum, eps]) => ({
         seasonNumber: parseInt(seasonNum),
         episodes: eps.map((ep) => ({
-          ...ep,
+          id: ep.id,
+          title: ep.title,
+          description: ep.description,
+          thumbnailUrl: ep.thumbnail,
+          videoUrl: ep.videoUrl,
           duration: ep.duration,
+          episodeNumber: ep.episodeNumber,
+          seasonNumber: ep.seasonNumber,
+          accessType: ep.accessType,
+          price: ep.price,
+          previewDuration: ep.previewDuration,
+          viewCount: ep.viewCount,
+          likeCount: ep.likeCount,
+          createdAt: ep.createdAt,
         })),
       })),
       createdAt: series.createdAt,
