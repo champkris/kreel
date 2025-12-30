@@ -27,6 +27,7 @@ import walletRoutes from './routes/wallet';
 import socialRoutes from './routes/social';
 import liveRoutes from './routes/live';
 import forumRoutes from './routes/forum';
+import clubRoutes from './routes/clubs';
 import challengeRoutes from './routes/challenges';
 
 console.log('Routes imported');
@@ -129,6 +130,7 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/live', liveRoutes);
 app.use('/api/forum', forumRoutes);
+app.use('/api/clubs', clubRoutes);
 app.use('/api/challenges', challengeRoutes);
 
 // Socket.IO for real-time features
