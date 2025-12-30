@@ -476,41 +476,36 @@ export default function SeriesDetailScreen() {
             )}
 
             {/* Episodes List */}
+            <Text style={{ color: '#fff', marginBottom: 10 }}>
+              Debug: {currentSeason?.episodes?.length || 0} episodes found
+            </Text>
             {(currentSeason?.episodes?.length || 0) > 0 ? (
               <View>
-                {currentSeason?.episodes.map((episode) => (
-                  <TouchableOpacity
+                {currentSeason?.episodes.map((episode, index) => (
+                  <View
                     key={episode.id}
-                    style={styles.episodeItem}
-                    onPress={() => handleEpisodePress(episode)}
-                    activeOpacity={0.7}
+                    style={{
+                      backgroundColor: index % 2 === 0 ? '#333' : '#444',
+                      padding: 12,
+                      marginBottom: 12,
+                      borderRadius: 8,
+                    }}
                   >
-                    <View style={styles.episodeThumbnailContainer}>
-                      <Image
-                        source={{ uri: episode.thumbnail || paramThumbnail }}
-                        style={styles.episodeThumbnail}
-                      />
-                      <View style={styles.playOverlay}>
-                        <View style={styles.playButton}>
-                          <Ionicons name="play" size={24} color={colors.textPrimary} />
-                        </View>
-                      </View>
-                      {getAccessBadge(episode.accessType, episode.price)}
+                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+                      {episode.episodeNumber}. {episode.title}
+                    </Text>
+                    <Text style={{ color: '#aaa', fontSize: 14, marginBottom: 8 }}>
+                      {episode.description}
+                    </Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ color: '#22c55e', fontSize: 12 }}>
+                        {episode.accessType}
+                      </Text>
+                      <Text style={{ color: '#888', fontSize: 12 }}>
+                        {formatDuration(episode.duration)}
+                      </Text>
                     </View>
-                    <View style={styles.episodeInfo}>
-                      <View style={styles.episodeHeader}>
-                        <Text style={styles.episodeTitle} numberOfLines={1}>
-                          {episode.episodeNumber}. {episode.title}
-                        </Text>
-                        <Text style={styles.episodeDuration}>{formatDuration(episode.duration)}</Text>
-                      </View>
-                      {episode.description && (
-                        <Text style={styles.episodeDescription} numberOfLines={2}>
-                          {episode.description}
-                        </Text>
-                      )}
-                    </View>
-                  </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             ) : (
