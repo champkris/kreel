@@ -67,6 +67,11 @@ if (process.env.REDIS_URL) {
 export { redis };
 
 const app = express();
+
+// Trust proxy - required when running behind a load balancer (DigitalOcean App Platform)
+// This ensures express-rate-limit correctly identifies users by their real IP
+app.set('trust proxy', 1);
+
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
