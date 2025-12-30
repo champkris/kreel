@@ -186,16 +186,16 @@ export default function SeriesDetailScreen() {
           },
           episodeCounts: apiData.episodeCounts || { free: 0, locked: 0, paid: 0, total: 0 },
           seasons: apiData.seasons?.map((s: any) => ({
-            id: `s${s.seasonNumber}`,
-            seasonNumber: s.seasonNumber,
-            title: `Season ${s.seasonNumber}`,
+            id: `s${s.seasonNumber || 1}`,
+            seasonNumber: s.seasonNumber || 1,
+            title: `Season ${s.seasonNumber || 1}`,
             episodes: s.episodes?.map((ep: any) => ({
-              id: ep.id,
+              id: ep.id || `ep-${Math.random()}`,
               episodeNumber: ep.episodeNumber || 1,
-              title: ep.title,
-              description: ep.description,
-              duration: ep.duration ? Math.floor(ep.duration / 60) : 0, // Convert seconds to minutes
-              thumbnail: ep.thumbnailUrl,
+              title: ep.title || 'Untitled Episode',
+              description: ep.description || '',
+              duration: typeof ep.duration === 'number' ? Math.floor(ep.duration / 60) : 0,
+              thumbnail: ep.thumbnailUrl || '',
               accessType: ep.accessType || 'FREE',
               price: ep.price ? Number(ep.price) : undefined,
             })) || [],
@@ -481,32 +481,35 @@ export default function SeriesDetailScreen() {
             </Text>
             {(currentSeason?.episodes?.length || 0) > 0 ? (
               <View>
-                {currentSeason?.episodes.map((episode, index) => (
-                  <View
-                    key={episode.id}
-                    style={{
-                      backgroundColor: index % 2 === 0 ? '#333' : '#444',
-                      padding: 12,
-                      marginBottom: 12,
-                      borderRadius: 8,
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
-                      {episode.episodeNumber}. {episode.title}
-                    </Text>
-                    <Text style={{ color: '#aaa', fontSize: 14, marginBottom: 8 }}>
-                      {episode.description}
-                    </Text>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <Text style={{ color: '#22c55e', fontSize: 12 }}>
-                        {episode.accessType}
+                {currentSeason?.episodes.map((episode, index) => {
+                  if (!episode) return null;
+                  return (
+                    <View
+                      key={episode.id || index}
+                      style={{
+                        backgroundColor: index % 2 === 0 ? '#333' : '#444',
+                        padding: 12,
+                        marginBottom: 12,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+                        {episode.episodeNumber || 0}. {episode.title || 'Untitled'}
                       </Text>
-                      <Text style={{ color: '#888', fontSize: 12 }}>
-                        {formatDuration(episode.duration)}
+                      <Text style={{ color: '#aaa', fontSize: 14, marginBottom: 8 }}>
+                        {episode.description || 'No description'}
                       </Text>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <Text style={{ color: '#22c55e', fontSize: 12 }}>
+                          {episode.accessType || 'FREE'}
+                        </Text>
+                        <Text style={{ color: '#888', fontSize: 12 }}>
+                          {formatDuration(episode.duration || 0)}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             ) : (
               <View style={styles.emptyTab}>
