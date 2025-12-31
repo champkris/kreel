@@ -11,6 +11,7 @@ import {
   StatusBar,
   Image,
   ImageBackground,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,6 +38,12 @@ import {
 } from '../data/seedData';
 
 const { width: screenWidth } = Dimensions.get('window');
+
+// Calculate card width for grid
+// On web, limit container width to mobile-like dimensions
+const effectiveWidth = Platform.OS === 'web' ? Math.min(screenWidth, 428) : screenWidth;
+// Available width = screen - (2 * padding) - (2 * gaps between 3 columns)
+const gridCardWidth = Math.floor((effectiveWidth - spacing.screenPadding * 2 - spacing.md * 2) / 3);
 
 type TabType = 'Following' | 'Trending' | 'Drama' | 'Live';
 
@@ -153,6 +160,14 @@ export default function HomeScreen() {
     <View style={styles.header}>
       <Text style={styles.logo}>KREELS</Text>
       <View style={styles.headerRight}>
+        {/* Daily Rewards Button */}
+        <TouchableOpacity
+          style={styles.dailyRewardsButton}
+          onPress={() => navigation.navigate('DailyRewards')}
+        >
+          <Text style={styles.dailyRewardsEmoji}>🪙</Text>
+          <View style={styles.dailyRewardsDot} />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.headerIcon}>
           <Ionicons name="search" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
@@ -377,7 +392,7 @@ export default function HomeScreen() {
             key={video.id}
             video={video}
             onPress={handleVideoPress}
-            width={(screenWidth - spacing.screenPadding * 2 - spacing.md * 2) / 3}
+            width={gridCardWidth}
           />
         ))}
       </View>
@@ -413,7 +428,7 @@ export default function HomeScreen() {
                 key={video.id}
                 video={video}
                 onPress={handleVideoPress}
-                width={(screenWidth - spacing.screenPadding * 2 - spacing.md * 2) / 3}
+                width={gridCardWidth}
               />
             ))}
           </View>
@@ -493,7 +508,7 @@ export default function HomeScreen() {
                 key={video.id}
                 video={video}
                 onPress={handleVideoPress}
-                width={(screenWidth - spacing.screenPadding * 2 - spacing.md * 2) / 3}
+                width={gridCardWidth}
               />
             ))}
           </View>
@@ -628,6 +643,24 @@ const styles = StyleSheet.create({
   },
   headerIcon: {
     padding: spacing.xs,
+  },
+  dailyRewardsButton: {
+    position: 'relative',
+    padding: spacing.xs,
+  },
+  dailyRewardsEmoji: {
+    fontSize: 22,
+  },
+  dailyRewardsDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
+    borderWidth: 1,
+    borderColor: colors.background,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -855,6 +888,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     paddingHorizontal: spacing.screenPadding,
     gap: spacing.md,
+    justifyContent: 'flex-start',
   },
   bottomSpacing: {
     height: spacing['3xl'],

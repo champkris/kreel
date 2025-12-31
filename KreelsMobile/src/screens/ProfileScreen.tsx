@@ -23,6 +23,13 @@ import { useAuthStore } from '../store/authStore';
 import { usersAPI, videosAPI } from '../services/api';
 import { Badge, BadgeRow, VerifiedBadge, RankBadge, XPProgress } from '../components/common';
 import type { BadgeData, RankData } from '../components/common';
+import {
+  RANK_TIERS,
+  getRankByLevel,
+  getNextRank,
+  getRankProgress,
+  getLevelsToNextRank,
+} from '../utils/rankingSystem';
 
 const { width: screenWidth } = Dimensions.get('window');
 const gridItemWidth = (screenWidth - spacing.screenPadding * 2 - spacing.md * 2) / 3;
@@ -246,6 +253,84 @@ export default function ProfileScreen() {
           />
         </View>
 
+        {/* Ranking Card */}
+        {(() => {
+          const level = profile?.currentLevel || 1;
+          const rankTier = getRankByLevel(level);
+          const nextRank = getNextRank(rankTier);
+          const progress = getRankProgress(level, rankTier);
+          const levelsToNext = getLevelsToNextRank(level, rankTier);
+
+          return (
+            <View style={styles.rankingSection}>
+              <Text style={styles.sectionTitle}>My Rank</Text>
+              <View style={styles.rankingCard}>
+                {/* Official Badge Banner */}
+                {hasOfficialBadge && (
+                  <View style={styles.officialBanner}>
+                    <Ionicons name="shield-checkmark" size={16} color="#fff" />
+                    <Text style={styles.officialBannerText}>Official Creator</Text>
+                  </View>
+                )}
+
+                {/* Current Rank */}
+                <View style={styles.currentRankRow}>
+                  <View style={styles.rankIconLarge}>
+                    <Text style={styles.rankIconText}>{rankTier.icon}</Text>
+                  </View>
+                  <View style={styles.rankDetails}>
+                    <Text style={[styles.rankName, { color: rankTier.color }]}>
+                      {rankTier.name}
+                    </Text>
+                    <Text style={styles.rankLevel}>Level {level}</Text>
+                  </View>
+                </View>
+
+                {/* Progress to Next Rank */}
+                {nextRank && (
+                  <View style={styles.nextRankSection}>
+                    <View style={styles.progressHeader}>
+                      <Text style={styles.progressLabel}>Progress to {nextRank.name}</Text>
+                      <Text style={styles.progressValue}>{Math.round(progress)}%</Text>
+                    </View>
+                    <View style={styles.progressBarBg}>
+                      <LinearGradient
+                        colors={[rankTier.color, nextRank.color]}
+                        style={[styles.progressBarFill, { width: `${progress}%` }]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      />
+                    </View>
+                    <Text style={styles.levelsRemaining}>
+                      {levelsToNext} levels to {nextRank.icon} {nextRank.name}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Rank Tiers Preview */}
+                <View style={styles.tierPreview}>
+                  {RANK_TIERS.slice(0, 5).map((tier, index) => {
+                    const isCurrentTier = tier.id === rankTier.id;
+                    const isPastTier = tier.minLevel < rankTier.minLevel;
+                    return (
+                      <View
+                        key={tier.id}
+                        style={[
+                          styles.tierDot,
+                          isCurrentTier && { backgroundColor: tier.color, transform: [{ scale: 1.3 }] },
+                          isPastTier && { backgroundColor: tier.color, opacity: 0.5 },
+                        ]}
+                      >
+                        <Text style={styles.tierDotIcon}>{tier.icon}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            </View>
+          );
+        })()}
+
         {/* Creator Dashboard Button */}
         <View style={styles.dashboardSection}>
           <TouchableOpacity onPress={handleCreatorDashboard}>
@@ -445,6 +530,116 @@ const styles = StyleSheet.create({
   xpSection: {
     paddingHorizontal: spacing.screenPadding,
     marginBottom: spacing.xl,
+  },
+  // Ranking Section
+  rankingSection: {
+    paddingHorizontal: spacing.screenPadding,
+    marginBottom: spacing.xl,
+  },
+  rankingCard: {
+    backgroundColor: colors.surface,
+    borderRadius: spacing.borderRadius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  officialBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3b82f6',
+    paddingVertical: spacing.sm,
+    marginHorizontal: -spacing.lg,
+    marginTop: -spacing.lg,
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  officialBannerText: {
+    color: '#fff',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+  },
+  currentRankRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  rankIconLarge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.surfaceLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankIconText: {
+    fontSize: 32,
+  },
+  rankDetails: {
+    flex: 1,
+  },
+  rankName: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+  },
+  rankLevel: {
+    color: colors.textMuted,
+    fontSize: typography.fontSize.md,
+    marginTop: 2,
+  },
+  nextRankSection: {
+    marginBottom: spacing.lg,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  progressLabel: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.sm,
+  },
+  progressValue: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  levelsRemaining: {
+    color: colors.textMuted,
+    fontSize: typography.fontSize.xs,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+  tierPreview: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  tierDot: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tierDotIcon: {
+    fontSize: 18,
   },
   dashboardSection: {
     paddingHorizontal: spacing.screenPadding,

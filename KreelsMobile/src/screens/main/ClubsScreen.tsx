@@ -23,7 +23,7 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { Card, VerifiedBadge } from '../../components/common';
-import { clubsAPI } from '../../services/api';
+import { clubsAPI, challengesAPI } from '../../services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
 const clubCardWidth = (screenWidth - spacing.screenPadding * 2 - spacing.md) / 2;
@@ -84,15 +84,40 @@ const trendingClubs = [
   { id: '4', name: 'Sci-Fi World', members: '82K', image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=400&fit=crop' },
 ];
 
-const challenges = [
+// Mock challenges data
+const mockChallenges = [
   {
     id: '1',
     title: 'Best Fan Theory',
+    description: 'Share your wildest theory about what happens next!',
     prize: '1 month premium',
     entries: 100,
+    status: 'ACTIVE',
     image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&h=250&fit=crop',
   },
+  {
+    id: '2',
+    title: 'Character Cosplay',
+    description: 'Show off your best cosplay look',
+    prize: '500 coins',
+    entries: 45,
+    status: 'ACTIVE',
+    image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&h=250&fit=crop',
+  },
 ];
+
+interface ChallengeData {
+  id: string;
+  title: string;
+  description?: string;
+  prize?: string;
+  entries?: number;
+  entriesCount?: number;
+  status?: string;
+  image?: string;
+  rewardType?: string;
+  rewardAmount?: number;
+}
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -101,10 +126,18 @@ export default function ClubsScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('feed');
   const [clubs, setClubs] = useState<ClubData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [challenges, setChallenges] = useState<ChallengeData[]>([]);
+  const [loadingChallenges, setLoadingChallenges] = useState(false);
 
   useEffect(() => {
     fetchClubs();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'challenges') {
+      fetchChallenges();
+    }
+  }, [activeTab]);
 
   const fetchClubs = async () => {
     try {
@@ -118,6 +151,35 @@ export default function ClubsScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchChallenges = async () => {
+    setLoadingChallenges(true);
+    try {
+      const response = await challengesAPI.getChallenges(1, 20, 'ACTIVE');
+      if (response.success && response.data?.length > 0) {
+        setChallenges(response.data.map((c: any) => ({
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          prize: c.rewardType === 'COINS' ? `${c.rewardAmount} coins` : c.rewardType,
+          entries: c.entriesCount || 0,
+          status: c.status,
+          image: c.banner || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&h=250&fit=crop',
+        })));
+      } else {
+        setChallenges(mockChallenges);
+      }
+    } catch (error) {
+      console.log('Using mock challenges');
+      setChallenges(mockChallenges);
+    } finally {
+      setLoadingChallenges(false);
+    }
+  };
+
+  const handleChallengePress = (challengeId: string) => {
+    navigation.navigate('ChallengeDetail', { challengeId });
   };
 
   const formatMemberCount = (count: number): string => {
@@ -398,52 +460,79 @@ export default function ClubsScreen() {
     );
   };
 
-  const renderChallenges = () => (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      {/* Featured Challenge */}
-      <Card style={styles.featuredChallenge}>
-        <TouchableOpacity style={styles.challengeTag}>
-          <Text style={styles.challengeTagText}>Meet the Cast (Virtual)</Text>
-        </TouchableOpacity>
-        <Text style={styles.challengeTitle}>Content League</Text>
-        <Text style={styles.challengeDesc}>
-          A cozy corner for all K-Drama lovers to share feels, spoilers (carefully!)
-        </Text>
-        <TouchableOpacity style={styles.enterButton}>
-          <Text style={styles.enterButtonText}>Enter Now</Text>
-        </TouchableOpacity>
-      </Card>
+  const renderChallenges = () => {
+    const featuredChallenge = challenges[0];
 
-      {/* Active Challenges */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Active Challenges</Text>
-        {challenges.map((challenge) => (
-          <Card key={challenge.id} style={styles.challengeCard}>
-            <ImageBackground
-              source={{ uri: challenge.image }}
-              style={styles.challengeImage}
-              imageStyle={{ borderRadius: spacing.borderRadius.md }}
+    return (
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Featured Challenge */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => featuredChallenge && handleChallengePress(featuredChallenge.id)}
+        >
+          <Card style={styles.featuredChallenge}>
+            <TouchableOpacity style={styles.challengeTag}>
+              <Text style={styles.challengeTagText}>Meet the Cast (Virtual)</Text>
+            </TouchableOpacity>
+            <Text style={styles.challengeTitle}>Content League</Text>
+            <Text style={styles.challengeDesc}>
+              A cozy corner for all K-Drama lovers to share feels, spoilers (carefully!)
+            </Text>
+            <TouchableOpacity
+              style={styles.enterButton}
+              onPress={() => featuredChallenge && handleChallengePress(featuredChallenge.id)}
             >
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.4)']}
-                style={StyleSheet.absoluteFill}
-              />
-            </ImageBackground>
-            <View style={styles.challengeInfo}>
-              <Text style={styles.challengeCardTitle}>{challenge.title}</Text>
-              <View style={styles.challengeMeta}>
-                <Ionicons name="people" size={14} color={colors.textMuted} />
-                <Text style={styles.challengeMetaText}>{challenge.entries} Entry</Text>
-              </View>
-              <TouchableOpacity style={styles.prizeBadge}>
-                <Text style={styles.prizeText}>{challenge.prize}</Text>
-              </TouchableOpacity>
-            </View>
+              <Text style={styles.enterButtonText}>Enter Now</Text>
+            </TouchableOpacity>
           </Card>
-        ))}
-      </View>
-    </ScrollView>
-  );
+        </TouchableOpacity>
+
+        {/* Active Challenges */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Active Challenges</Text>
+          {loadingChallenges ? (
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: spacing.xl }} />
+          ) : challenges.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="trophy-outline" size={48} color={colors.textMuted} />
+              <Text style={styles.emptyStateText}>No active challenges</Text>
+            </View>
+          ) : (
+            challenges.map((challenge) => (
+              <TouchableOpacity
+                key={challenge.id}
+                onPress={() => handleChallengePress(challenge.id)}
+                activeOpacity={0.8}
+              >
+                <Card style={styles.challengeCard}>
+                  <ImageBackground
+                    source={{ uri: challenge.image }}
+                    style={styles.challengeImage}
+                    imageStyle={{ borderRadius: spacing.borderRadius.md }}
+                  >
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.4)']}
+                      style={StyleSheet.absoluteFill}
+                    />
+                  </ImageBackground>
+                  <View style={styles.challengeInfo}>
+                    <Text style={styles.challengeCardTitle}>{challenge.title}</Text>
+                    <View style={styles.challengeMeta}>
+                      <Ionicons name="people" size={14} color={colors.textMuted} />
+                      <Text style={styles.challengeMetaText}>{challenge.entries} Entry</Text>
+                    </View>
+                    <TouchableOpacity style={styles.prizeBadge}>
+                      <Text style={styles.prizeText}>{challenge.prize}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </Card>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -837,5 +926,14 @@ const styles = StyleSheet.create({
   prizeText: {
     color: colors.primary,
     fontSize: typography.fontSize.sm,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing['3xl'],
+  },
+  emptyStateText: {
+    color: colors.textMuted,
+    fontSize: typography.fontSize.md,
+    marginTop: spacing.md,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,9 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import LiveGiftingModal from '../../components/live/LiveGiftingModal';
+import LivePollModal, { Poll } from '../../components/live/LivePollModal';
+import FloatingReactions, { ReactionBar } from '../../components/live/FloatingReactions';
+import TopGiftersPanel, { TopGifter } from '../../components/live/TopGiftersPanel';
 import { Gift, formatCoins } from '../../data/giftData';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -38,7 +41,7 @@ interface ChatMessage {
   id: string;
   username: string;
   message: string;
-  type: 'chat' | 'gift' | 'system';
+  type: 'chat' | 'gift' | 'system' | 'poll';
   gift?: {
     icon: string;
     name: string;
@@ -53,6 +56,12 @@ interface GiftAnimation {
   sender: string;
 }
 
+interface FloatingReaction {
+  id: string;
+  emoji: string;
+  x: number;
+}
+
 export default function LiveStreamViewScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const route = useRoute<RouteProp<{ params: LiveStreamParams }, 'params'>>();
@@ -65,18 +74,90 @@ export default function LiveStreamViewScreen() {
   };
 
   const [showGiftModal, setShowGiftModal] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [showReactionBar, setShowReactionBar] = useState(false);
+  const [showGiftersPanel, setShowGiftersPanel] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [userCoins, setUserCoins] = useState(540);
   const [giftAnimations, setGiftAnimations] = useState<GiftAnimation[]>([]);
+  const [floatingReactions, setFloatingReactions] = useState<FloatingReaction[]>([]);
+
+  // Mock active poll
+  const [activePoll, setActivePoll] = useState<Poll | null>({
+    id: 'poll1',
+    question: 'What should I play next?',
+    options: [
+      { id: 'opt1', text: 'Horror Game', votes: 156, percentage: 45 },
+      { id: 'opt2', text: 'Action RPG', votes: 120, percentage: 35 },
+      { id: 'opt3', text: 'Racing Game', votes: 69, percentage: 20 },
+    ],
+    totalVotes: 345,
+    endsAt: Date.now() + 120000, // 2 minutes from now
+    hasVoted: false,
+  });
+
+  // Mock top gifters
+  const [topGifters, setTopGifters] = useState<TopGifter[]>([
+    { id: '1', username: 'DiamondKing', totalCoins: 5200, topGift: { icon: '💎', name: 'Diamond' } },
+    { id: '2', username: 'RocketFan', totalCoins: 3100, topGift: { icon: '🚀', name: 'Rocket' } },
+    { id: '3', username: 'StarLover', totalCoins: 2500, topGift: { icon: '⭐', name: 'Star' } },
+    { id: '4', username: 'GiftMaster', totalCoins: 1800 },
+    { id: '5', username: 'SupporterX', totalCoins: 1200 },
+  ]);
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: '1', username: 'StarFan', message: 'Amazing stream!', type: 'chat' },
     { id: '2', username: 'DiamondLover', message: 'Welcome everyone!', type: 'chat' },
     { id: '3', username: 'System', message: 'GiftKing joined the stream', type: 'system' },
     { id: '4', username: 'RocketMan', message: 'Love this!', type: 'chat' },
+    { id: '5', username: 'System', message: '📊 Poll started: What should I play next?', type: 'poll' },
   ]);
 
   const chatListRef = useRef<FlatList>(null);
   const giftAnim = useRef(new Animated.Value(0)).current;
+  const pollBadgeAnim = useRef(new Animated.Value(1)).current;
+
+  // Animate poll badge
+  useEffect(() => {
+    if (activePoll && !activePoll.hasVoted) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pollBadgeAnim, {
+            toValue: 1.1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pollBadgeAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [activePoll]);
+
+  // Simulate incoming chat messages
+  useEffect(() => {
+    const mockMessages = [
+      { username: 'CoolViewer', message: 'This is so good!' },
+      { username: 'StreamFan', message: '❤️❤️❤️' },
+      { username: 'NightOwl', message: 'First time here, love it!' },
+    ];
+
+    const interval = setInterval(() => {
+      const randomMsg = mockMessages[Math.floor(Math.random() * mockMessages.length)];
+      const newMessage: ChatMessage = {
+        id: Date.now().toString(),
+        username: randomMsg.username,
+        message: randomMsg.message,
+        type: 'chat',
+      };
+      setMessages(prev => [...prev, newMessage]);
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSendGift = (gift: Gift, quantity: number) => {
     const cost = gift.price * quantity;
@@ -90,6 +171,24 @@ export default function LiveStreamViewScreen() {
       ...prev,
       { id: animId, gift, quantity, sender: 'You' },
     ]);
+
+    // Update top gifters
+    setTopGifters(prev => {
+      const existingIndex = prev.findIndex(g => g.id === 'you');
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex].totalCoins += cost;
+        return updated.sort((a, b) => b.totalCoins - a.totalCoins);
+      } else {
+        const newGifter: TopGifter = {
+          id: 'you',
+          username: 'You',
+          totalCoins: cost,
+          topGift: { icon: gift.icon, name: gift.name },
+        };
+        return [...prev, newGifter].sort((a, b) => b.totalCoins - a.totalCoins).slice(0, 10);
+      }
+    });
 
     // Add gift message to chat
     const newMessage: ChatMessage = {
@@ -138,6 +237,55 @@ export default function LiveStreamViewScreen() {
     setChatMessage('');
   };
 
+  const handleVote = (pollId: string, optionId: string) => {
+    if (!activePoll) return;
+
+    setActivePoll(prev => {
+      if (!prev) return prev;
+      const newOptions = prev.options.map(opt => {
+        if (opt.id === optionId) {
+          return { ...opt, votes: opt.votes + 1 };
+        }
+        return opt;
+      });
+      const newTotal = prev.totalVotes + 1;
+      const optionsWithPercentage = newOptions.map(opt => ({
+        ...opt,
+        percentage: Math.round((opt.votes / newTotal) * 100),
+      }));
+      return {
+        ...prev,
+        options: optionsWithPercentage,
+        totalVotes: newTotal,
+        hasVoted: true,
+        votedOptionId: optionId,
+      };
+    });
+
+    // Add vote to chat
+    const votedOption = activePoll.options.find(o => o.id === optionId);
+    const newMessage: ChatMessage = {
+      id: Date.now().toString(),
+      username: 'You',
+      message: `voted for "${votedOption?.text}"`,
+      type: 'system',
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const handleReaction = (emoji: string) => {
+    const newReaction: FloatingReaction = {
+      id: Date.now().toString() + Math.random(),
+      emoji,
+      x: Math.random() * 60 + 20,
+    };
+    setFloatingReactions(prev => [...prev, newReaction]);
+  };
+
+  const handleReactionComplete = (id: string) => {
+    setFloatingReactions(prev => prev.filter(r => r.id !== id));
+  };
+
   const handleTopUp = () => {
     setShowGiftModal(false);
     navigation.navigate('TopUp' as never);
@@ -149,6 +297,19 @@ export default function LiveStreamViewScreen() {
         <View style={styles.systemMessage}>
           <Text style={styles.systemMessageText}>{item.message}</Text>
         </View>
+      );
+    }
+
+    if (item.type === 'poll') {
+      return (
+        <TouchableOpacity
+          style={styles.pollMessage}
+          onPress={() => setShowPollModal(true)}
+        >
+          <Ionicons name="stats-chart" size={14} color={colors.primary} />
+          <Text style={styles.pollMessageText}>{item.message}</Text>
+          <Text style={styles.pollTap}>Tap to vote</Text>
+        </TouchableOpacity>
       );
     }
 
@@ -222,6 +383,40 @@ export default function LiveStreamViewScreen() {
             </View>
           </View>
 
+          {/* Active Poll Indicator */}
+          {activePoll && !activePoll.hasVoted && (
+            <Animated.View style={{ transform: [{ scale: pollBadgeAnim }] }}>
+              <TouchableOpacity
+                style={styles.activePollBanner}
+                onPress={() => setShowPollModal(true)}
+              >
+                <LinearGradient
+                  colors={[colors.primary + '30', colors.primaryLight + '20']}
+                  style={styles.pollBannerGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Ionicons name="stats-chart" size={18} color={colors.primary} />
+                  <View style={styles.pollBannerText}>
+                    <Text style={styles.pollBannerTitle}>Active Poll</Text>
+                    <Text style={styles.pollBannerQuestion} numberOfLines={1}>
+                      {activePoll.question}
+                    </Text>
+                  </View>
+                  <View style={styles.pollVoteButton}>
+                    <Text style={styles.pollVoteText}>Vote</Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {/* Floating Reactions */}
+          <FloatingReactions
+            reactions={floatingReactions}
+            onReactionComplete={handleReactionComplete}
+          />
+
           {/* Gift Animation Overlay */}
           {giftAnimations.map(anim => (
             <Animated.View
@@ -264,6 +459,13 @@ export default function LiveStreamViewScreen() {
 
           {/* Main Content Area */}
           <View style={styles.contentArea}>
+            {/* Top Gifters Panel */}
+            <TopGiftersPanel
+              gifters={topGifters}
+              isExpanded={showGiftersPanel}
+              onToggle={() => setShowGiftersPanel(!showGiftersPanel)}
+            />
+
             {/* Chat Messages */}
             <View style={styles.chatContainer}>
               <FlatList
@@ -283,6 +485,13 @@ export default function LiveStreamViewScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.bottomControls}
           >
+            {/* Reaction Bar (Expandable) */}
+            {showReactionBar && (
+              <View style={styles.reactionBarContainer}>
+                <ReactionBar onReaction={handleReaction} />
+              </View>
+            )}
+
             <View style={styles.inputRow}>
               <TextInput
                 style={styles.chatInput}
@@ -328,10 +537,24 @@ export default function LiveStreamViewScreen() {
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Like Button */}
-              <TouchableOpacity style={styles.actionButton}>
-                <Ionicons name="heart-outline" size={24} color={colors.textPrimary} />
+              {/* Reaction Toggle Button */}
+              <TouchableOpacity
+                style={[styles.actionButton, showReactionBar && styles.actionButtonActive]}
+                onPress={() => setShowReactionBar(!showReactionBar)}
+              >
+                <Text style={styles.reactionButtonEmoji}>❤️</Text>
               </TouchableOpacity>
+
+              {/* Poll Button */}
+              {activePoll && (
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.pollButton]}
+                  onPress={() => setShowPollModal(true)}
+                >
+                  <Ionicons name="stats-chart" size={22} color={colors.primary} />
+                  {!activePoll.hasVoted && <View style={styles.pollDot} />}
+                </TouchableOpacity>
+              )}
 
               {/* Share Button */}
               <TouchableOpacity style={styles.actionButton}>
@@ -350,6 +573,14 @@ export default function LiveStreamViewScreen() {
         userCoins={userCoins}
         creatorName={creator}
         onTopUp={handleTopUp}
+      />
+
+      {/* Poll Modal */}
+      <LivePollModal
+        poll={activePoll}
+        visible={showPollModal}
+        onVote={handleVote}
+        onClose={() => setShowPollModal(false)}
       />
     </View>
   );
@@ -450,12 +681,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: typography.fontWeight.medium,
   },
+  activePollBanner: {
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    borderRadius: spacing.borderRadius.lg,
+    overflow: 'hidden',
+  },
+  pollBannerGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.primary + '40',
+    borderRadius: spacing.borderRadius.lg,
+  },
+  pollBannerText: {
+    flex: 1,
+  },
+  pollBannerTitle: {
+    color: colors.primary,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    textTransform: 'uppercase',
+  },
+  pollBannerQuestion: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  pollVoteButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: spacing.borderRadius.sm,
+  },
+  pollVoteText: {
+    color: colors.background,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+  },
   contentArea: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   chatContainer: {
-    maxHeight: screenHeight * 0.35,
+    maxHeight: screenHeight * 0.3,
     paddingHorizontal: spacing.md,
     marginBottom: spacing.md,
   },
@@ -490,6 +761,29 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.fontSize.sm,
     fontStyle: 'italic',
+  },
+  pollMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '20',
+    borderRadius: spacing.borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xs,
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.primary + '40',
+  },
+  pollMessageText: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.sm,
+    flex: 1,
+  },
+  pollTap: {
+    color: colors.primary,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
   },
   giftMessage: {
     flexDirection: 'row',
@@ -563,6 +857,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
   },
+  reactionBarContainer: {
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -635,6 +933,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 'auto',
+  },
+  actionButtonActive: {
+    backgroundColor: colors.primary + '30',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  reactionButtonEmoji: {
+    fontSize: 22,
+  },
+  pollButton: {
+    position: 'relative',
+  },
+  pollDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.live,
   },
 });

@@ -41,7 +41,19 @@ export type ViewAllType =
   | 'trending_clubs'
   | 'trending_creators'
   | 'trending_livestreams'
-  | 'trending_talents';
+  | 'trending_talents'
+  // Genre types
+  | 'genre_romance'
+  | 'genre_drama'
+  | 'genre_thriller'
+  | 'genre_action'
+  | 'genre_fantasy'
+  | 'genre_comedy'
+  | 'genre_horror'
+  | 'genre_sci-fi'
+  | 'genre_sports'
+  | 'genre_mystery'
+  | string; // Allow any genre_* type
 
 type ViewAllParams = {
   ViewAll: {
@@ -88,6 +100,14 @@ const trendingLivestreams = [
 ];
 
 const getVideosForType = (type: ViewAllType): Video[] => {
+  // Handle genre types (genre_*)
+  if (type.startsWith('genre_')) {
+    const genre = type.replace('genre_', '').toLowerCase();
+    return mockVideos.filter(video =>
+      video.tags.some(tag => tag.toLowerCase().includes(genre) || genre.includes(tag.toLowerCase()))
+    );
+  }
+
   switch (type) {
     case 'following':
       return getFollowingVideos();

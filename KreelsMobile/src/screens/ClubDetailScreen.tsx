@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,18 @@ import {
   Image,
   ImageBackground,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { Card } from '../components/common';
+import { challengesAPI } from '../services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -60,16 +64,84 @@ const clubMembers = [
   { id: '4', name: 'Alex', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop' },
 ];
 
+// Mock challenges data for demo
+const mockChallenges = [
+  {
+    id: '1',
+    title: 'Best Fan Theory',
+    description: 'Share your wildest theory about what happens next!',
+    status: 'ACTIVE',
+    entryTier: 'FREE',
+    rewardType: 'COINS',
+    rewardAmount: 500,
+    entriesCount: 24,
+    endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Character Artwork',
+    description: 'Draw your favorite character in your own style',
+    status: 'VOTING',
+    entryTier: 'COIN_ENTRY',
+    rewardType: 'COINS',
+    rewardAmount: 1000,
+    entriesCount: 45,
+    endDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+type NavigationProp = StackNavigationProp<RootStackParamList>;
+
 export default function ClubDetailScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<ClubDetailParams, 'ClubDetail'>>();
   const { id, name, members, image } = route.params;
 
   const [isJoined, setIsJoined] = useState(false);
-  const [activeTab, setActiveTab] = useState<'posts' | 'members' | 'about'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'challenges' | 'members' | 'about'>('posts');
+  const [challenges, setChallenges] = useState<typeof mockChallenges>([]);
+  const [loadingChallenges, setLoadingChallenges] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'challenges') {
+      fetchChallenges();
+    }
+  }, [activeTab]);
+
+  const fetchChallenges = async () => {
+    setLoadingChallenges(true);
+    try {
+      const response = await challengesAPI.getChallenges(1, 20, undefined, id);
+      if (response.success && response.data?.length > 0) {
+        setChallenges(response.data);
+      } else {
+        setChallenges(mockChallenges);
+      }
+    } catch (error) {
+      console.log('Using mock challenges data');
+      setChallenges(mockChallenges);
+    } finally {
+      setLoadingChallenges(false);
+    }
+  };
 
   const handleJoin = () => {
     setIsJoined(!isJoined);
+  };
+
+  const handleChallengePress = (challengeId: string) => {
+    navigation.navigate('ChallengeDetail', { challengeId });
+  };
+
+  const getTimeRemaining = (endDate: string) => {
+    const end = new Date(endDate).getTime();
+    const now = Date.now();
+    const diff = end - now;
+    if (diff <= 0) return 'Ended';
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    if (days > 0) return `${days}d ${hours}h left`;
+    return `${hours}h left`;
   };
 
   const renderPost = ({ item }: { item: typeof clubPosts[0] }) => (
@@ -193,6 +265,14 @@ export default function ClubDetailScreen() {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            style={[styles.tab, activeTab === 'challenges' && styles.tabActive]}
+            onPress={() => setActiveTab('challenges')}
+          >
+            <Text style={[styles.tabText, activeTab === 'challenges' && styles.tabTextActive]}>
+              Challenges
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'members' && styles.tabActive]}
             onPress={() => setActiveTab('members')}
           >
@@ -219,6 +299,66 @@ export default function ClubDetailScreen() {
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
             />
+          )}
+          {activeTab === 'challenges' && (
+            loadingChallenges ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+              </View>
+            ) : challenges.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="trophy-outline" size={48} color={colors.textMuted} />
+                <Text style={styles.emptyStateText}>No challenges yet</Text>
+                <Text style={styles.emptyStateSubtext}>Check back soon for exciting challenges!</Text>
+              </View>
+            ) : (
+              <View style={styles.challengesList}>
+                {challenges.map((challenge) => (
+                  <TouchableOpacity
+                    key={challenge.id}
+                    style={styles.challengeCard}
+                    onPress={() => handleChallengePress(challenge.id)}
+                  >
+                    <View style={styles.challengeHeader}>
+                      <View style={[
+                        styles.statusBadge,
+                        challenge.status === 'ACTIVE' && styles.statusActive,
+                        challenge.status === 'VOTING' && styles.statusVoting,
+                      ]}>
+                        <Text style={styles.statusText}>{challenge.status}</Text>
+                      </View>
+                      <View style={styles.tierBadge}>
+                        <Ionicons
+                          name={challenge.entryTier === 'FREE' ? 'star-outline' : 'star'}
+                          size={12}
+                          color={colors.primary}
+                        />
+                        <Text style={styles.tierText}>{challenge.entryTier.replace('_', ' ')}</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.challengeTitle}>{challenge.title}</Text>
+                    <Text style={styles.challengeDescription} numberOfLines={2}>
+                      {challenge.description}
+                    </Text>
+
+                    <View style={styles.challengeFooter}>
+                      <View style={styles.challengeStat}>
+                        <Ionicons name="people-outline" size={14} color={colors.textMuted} />
+                        <Text style={styles.statText}>{challenge.entriesCount} entries</Text>
+                      </View>
+                      <View style={styles.challengeStat}>
+                        <Ionicons name="gift-outline" size={14} color={colors.primary} />
+                        <Text style={[styles.statText, { color: colors.primary }]}>
+                          {challenge.rewardAmount} coins
+                        </Text>
+                      </View>
+                      <Text style={styles.timeRemaining}>{getTimeRemaining(challenge.endDate)}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )
           )}
           {activeTab === 'members' && (
             <FlatList
@@ -490,5 +630,99 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: spacing['3xl'],
+  },
+  // Challenges styles
+  loadingContainer: {
+    paddingVertical: spacing['3xl'],
+    alignItems: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing['3xl'],
+  },
+  emptyStateText: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    marginTop: spacing.md,
+  },
+  emptyStateSubtext: {
+    color: colors.textMuted,
+    fontSize: typography.fontSize.md,
+    marginTop: spacing.xs,
+  },
+  challengesList: {
+    gap: spacing.md,
+  },
+  challengeCard: {
+    backgroundColor: colors.surface,
+    borderRadius: spacing.borderRadius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  challengeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: spacing.borderRadius.sm,
+    backgroundColor: colors.surfaceLight,
+  },
+  statusActive: {
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+  },
+  statusVoting: {
+    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+  },
+  statusText: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+  },
+  tierBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  tierText: {
+    color: colors.primary,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+  },
+  challengeTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    marginBottom: spacing.xs,
+  },
+  challengeDescription: {
+    color: colors.textMuted,
+    fontSize: typography.fontSize.md,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  challengeFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+  },
+  challengeStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  statText: {
+    color: colors.textMuted,
+    fontSize: typography.fontSize.sm,
+  },
+  timeRemaining: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.sm,
+    marginLeft: 'auto',
   },
 });

@@ -24,6 +24,20 @@ import { spacing } from '../../theme/spacing';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+// Genre data with icons and colors
+const genres = [
+  { id: 'romance', name: 'Romance', icon: 'heart', color: '#E91E63', image: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=200&h=200&fit=crop' },
+  { id: 'drama', name: 'Drama', icon: 'film', color: '#9C27B0', image: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=200&h=200&fit=crop' },
+  { id: 'thriller', name: 'Thriller', icon: 'eye', color: '#F44336', image: 'https://images.unsplash.com/photo-1509248961725-aec71c0e100a?w=200&h=200&fit=crop' },
+  { id: 'action', name: 'Action', icon: 'flame', color: '#FF5722', image: 'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=200&h=200&fit=crop' },
+  { id: 'fantasy', name: 'Fantasy', icon: 'sparkles', color: '#673AB7', image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&h=200&fit=crop' },
+  { id: 'comedy', name: 'Comedy', icon: 'happy', color: '#FFC107', image: 'https://images.unsplash.com/photo-1527224857830-43a7acc85260?w=200&h=200&fit=crop' },
+  { id: 'horror', name: 'Horror', icon: 'skull', color: '#424242', image: 'https://images.unsplash.com/photo-1509248961725-aec71c0e100a?w=200&h=200&fit=crop' },
+  { id: 'sci-fi', name: 'Sci-Fi', icon: 'planet', color: '#00BCD4', image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=200&h=200&fit=crop' },
+  { id: 'sports', name: 'Sports', icon: 'football', color: '#4CAF50', image: 'https://images.unsplash.com/photo-1461896836934- voices?w=200&h=200&fit=crop' },
+  { id: 'mystery', name: 'Mystery', icon: 'help-circle', color: '#607D8B', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop' },
+];
+
 // Mock data with images
 const newReleases = [
   { id: '1', title: 'The Last Kingdom', image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&h=600&fit=crop' },
@@ -79,6 +93,31 @@ export default function ExploreScreen() {
       image: stream.image,
     });
   };
+
+  const handleGenrePress = (genre: typeof genres[0]) => {
+    navigation.navigate('ViewAll', {
+      type: `genre_${genre.id}` as ViewAllType,
+      title: genre.name,
+    });
+  };
+
+  const renderGenreCard = ({ item }: { item: typeof genres[0] }) => (
+    <TouchableOpacity
+      style={styles.genreCard}
+      onPress={() => handleGenrePress(item)}
+      activeOpacity={0.8}
+    >
+      <LinearGradient
+        colors={[item.color, `${item.color}99`]}
+        style={styles.genreGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Ionicons name={item.icon as any} size={24} color={colors.textPrimary} />
+        <Text style={styles.genreName}>{item.name}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
 
   const renderSectionHeader = (title: string, onViewAll?: () => void) => (
     <View style={styles.sectionHeader}>
@@ -188,6 +227,17 @@ export default function ExploreScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Browse by Genre */}
+        {renderSectionHeader('Browse by Genre')}
+        <FlatList
+          horizontal
+          data={genres}
+          renderItem={renderGenreCard}
+          keyExtractor={(item) => item.id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.genreList}
+        />
+
         {/* New Releases */}
         {renderSectionHeader('New Releases', () => handleViewAll('new_releases', 'New Releases'))}
         <FlatList
@@ -303,8 +353,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenPadding,
     gap: spacing.md,
   },
+  genreList: {
+    paddingHorizontal: spacing.screenPadding,
+    gap: spacing.sm,
+  },
   lastSection: {
     marginBottom: spacing['3xl'],
+  },
+  // Genre Cards
+  genreCard: {
+    borderRadius: spacing.borderRadius.lg,
+    overflow: 'hidden',
+  },
+  genreGradient: {
+    width: 100,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: spacing.borderRadius.lg,
+    gap: spacing.xs,
+  },
+  genreName: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
   // New Releases
   releaseCard: {

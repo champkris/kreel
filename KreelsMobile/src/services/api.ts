@@ -268,6 +268,47 @@ export const clubsAPI = {
   },
 };
 
+// Challenges API
+export const challengesAPI = {
+  getChallenges: async (page = 1, limit = 20, status?: string, clubId?: string) => {
+    let url = `/challenges?page=${page}&limit=${limit}`;
+    if (status) url += `&status=${status}`;
+    if (clubId) url += `&clubId=${clubId}`;
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  getChallenge: async (challengeId: string) => {
+    const response = await api.get(`/challenges/${challengeId}`);
+    return response.data;
+  },
+
+  getEntries: async (challengeId: string, page = 1, limit = 20, sort = 'votes') => {
+    const response = await api.get(`/challenges/${challengeId}/entries?page=${page}&limit=${limit}&sort=${sort}`);
+    return response.data;
+  },
+
+  submitEntry: async (challengeId: string, data: { title?: string; content: string; mediaUrl?: string; mediaType?: string }) => {
+    const response = await api.post(`/challenges/${challengeId}/entries`, data);
+    return response.data;
+  },
+
+  voteForEntry: async (challengeId: string, entryId: string) => {
+    const response = await api.post(`/challenges/${challengeId}/entries/${entryId}/vote`);
+    return response.data;
+  },
+
+  removeVote: async (challengeId: string, entryId: string) => {
+    const response = await api.delete(`/challenges/${challengeId}/entries/${entryId}/vote`);
+    return response.data;
+  },
+
+  getMyVotes: async (challengeId: string) => {
+    const response = await api.get(`/challenges/${challengeId}/votes/my`);
+    return response.data;
+  },
+};
+
 // Series API
 export const seriesAPI = {
   getSeries: async (page = 1, limit = 20, category?: string) => {

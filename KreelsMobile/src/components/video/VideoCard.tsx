@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Video } from '../../types';
 import { formatViews } from '../../data/seedData';
@@ -22,7 +23,9 @@ interface VideoCardProps {
 }
 
 const { width: screenWidth } = Dimensions.get('window');
-const defaultCardWidth = (screenWidth - 60) / 2; // 2 columns with padding
+// Ensure reasonable card width for mobile views
+const maxCardWidth = Platform.OS === 'web' ? 150 : 200;
+const defaultCardWidth = Math.min((screenWidth - 60) / 2, maxCardWidth);
 
 const getCategoryName = (tags: string[]): string => {
   const categoryMap: Record<string, string> = {
