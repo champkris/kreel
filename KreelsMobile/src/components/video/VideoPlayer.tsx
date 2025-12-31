@@ -9,7 +9,10 @@ import {
   StatusBar,
   Image,
   Animated,
+  Platform,
 } from 'react-native';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -33,12 +36,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onClose,
   isActive = true,
 }) => {
+  const videoRef = useRef<Video>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isLandscapeVideo, setIsLandscapeVideo] = useState(false);
+  const [isLandscapeMode, setIsLandscapeMode] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
 
   const likeScale = useRef(new Animated.Value(0)).current;
   const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -46,29 +54,83 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const heartScale = useRef(new Animated.Value(0)).current;
   const lastTap = useRef<number>(0);
 
+  // Listen for dimension changes (orientation)
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setDimensions({ width: window.width, height: window.height });
+    });
+    return () => subscription?.remove();
+  }, []);
+
+  // Handle orientation when video type is detected
+  useEffect(() => {
+    if (isLandscapeVideo && isActive) {
+      rotateToLandscape();
+    }
+    return () => {
+      // Restore portrait on unmount
+      restoreOrientation();
+    };
+  }, [isLandscapeVideo, isActive]);
+
+  const rotateToLandscape = async () => {
+    try {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+      setIsLandscapeMode(true);
+    } catch (error) {
+      console.log('Orientation lock error:', error);
+    }
+  };
+
+  const restoreOrientation = async () => {
+    try {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      setIsLandscapeMode(false);
+    } catch (error) {
+      console.log('Orientation restore error:', error);
+    }
+  };
+
+  const handleClose = async () => {
+    await restoreOrientation();
+    onClose();
+  };
+
   // Auto-hide controls after 3 seconds
   useEffect(() => {
-    if (showControls) {
+    if (showControls && isPlaying) {
       const timer = setTimeout(() => {
         Animated.timing(controlsOpacity, {
-          toValue: 0.7,
+          toValue: 0,
           duration: 300,
           useNativeDriver: true,
-        }).start();
+        }).start(() => setShowControls(false));
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [showControls]);
+  }, [showControls, isPlaying]);
 
-  // Simulate video progress
-  useEffect(() => {
-    if (isActive && isPlaying) {
-      const interval = setInterval(() => {
-        setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
-      }, 100);
-      return () => clearInterval(interval);
+  // Handle playback status update
+  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    if (!status.isLoaded) return;
+
+    setIsPlaying(status.isPlaying);
+
+    if (status.durationMillis) {
+      setDuration(status.durationMillis);
+      setProgress((status.positionMillis / status.durationMillis) * 100);
     }
-  }, [isActive, isPlaying]);
+
+    // Detect video orientation from naturalSize
+    const anyStatus = status as any;
+    if (anyStatus.naturalSize && !isLandscapeVideo) {
+      const { width, height } = anyStatus.naturalSize;
+      const isLandscape = width > height;
+      if (isLandscape) {
+        setIsLandscapeVideo(true);
+      }
+    }
+  };
 
   const handleDoubleTap = () => {
     const now = Date.now();
@@ -89,15 +151,34 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setTimeout(() => {
       const now = Date.now();
       if (now - lastTap.current >= 300) {
-        setIsPlaying(!isPlaying);
-        setShowControls(true);
-        Animated.timing(controlsOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
+        if (showControls) {
+          // Hide controls
+          Animated.timing(controlsOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => setShowControls(false));
+        } else {
+          // Show controls
+          setShowControls(true);
+          Animated.timing(controlsOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+        }
       }
     }, 300);
+  };
+
+  const togglePlayPause = async () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        await videoRef.current.pauseAsync();
+      } else {
+        await videoRef.current.playAsync();
+      }
+    }
   };
 
   const animateLike = () => {
@@ -146,11 +227,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return num.toString();
   };
 
+  // Get video URL - use actual video or fallback to sample
+  const videoUrl = video.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isLandscapeMode && styles.landscapeContainer]}>
       <StatusBar hidden />
 
-      {/* Video Background */}
+      {/* Video Player */}
       <TouchableWithoutFeedback
         onPress={() => {
           handleSingleTap();
@@ -158,14 +242,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }}
       >
         <View style={styles.videoContainer}>
-          <Image
-            source={{
-              uri:
-                video.thumbnailUrl ||
-                'https://images.unsplash.com/photo-1616530940355-351fabd9524b?w=800',
-            }}
-            style={styles.backgroundImage}
-            resizeMode="cover"
+          <Video
+            ref={videoRef}
+            source={{ uri: videoUrl }}
+            posterSource={{ uri: video.thumbnailUrl || 'https://images.unsplash.com/photo-1616530940355-351fabd9524b?w=800' }}
+            usePoster={true}
+            posterStyle={styles.poster}
+            style={[
+              styles.video,
+              isLandscapeMode ? styles.landscapeVideo : styles.portraitVideo,
+            ]}
+            resizeMode={isLandscapeMode ? ResizeMode.CONTAIN : ResizeMode.COVER}
+            shouldPlay={isActive && isPlaying}
+            isLooping={true}
+            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
           />
 
           {/* Gradient overlays */}
@@ -180,11 +270,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
           {/* Pause indicator */}
           {!isPlaying && (
-            <View style={styles.pauseOverlay}>
+            <TouchableOpacity style={styles.pauseOverlay} onPress={togglePlayPause}>
               <View style={styles.pauseIconContainer}>
                 <Ionicons name="play" size={48} color="white" />
               </View>
-            </View>
+            </TouchableOpacity>
           )}
 
           {/* Double tap heart animation */}
@@ -203,156 +293,199 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       </TouchableWithoutFeedback>
 
       {/* Top Navigation */}
-      <Animated.View style={[styles.topNav, { opacity: controlsOpacity }]}>
-        <TouchableOpacity onPress={onClose} style={styles.backButton}>
-          <BlurView intensity={30} tint="dark" style={styles.blurButton}>
-            <Ionicons name="chevron-back" size={24} color="white" />
-          </BlurView>
-        </TouchableOpacity>
-
-        <View style={styles.topRight}>
-          <TouchableOpacity style={styles.topButton}>
+      {showControls && (
+        <Animated.View style={[styles.topNav, { opacity: controlsOpacity }]}>
+          <TouchableOpacity onPress={handleClose} style={styles.backButton}>
             <BlurView intensity={30} tint="dark" style={styles.blurButton}>
-              <Ionicons name="search" size={20} color="white" />
+              <Ionicons name="chevron-back" size={24} color="white" />
             </BlurView>
           </TouchableOpacity>
-        </View>
-      </Animated.View>
 
-      {/* Right Side Actions */}
-      <Animated.View style={[styles.rightActions, { opacity: controlsOpacity }]}>
-        {/* Creator Avatar */}
-        <View style={styles.creatorAvatarContainer}>
-          <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
-            style={styles.creatorAvatar}
-          >
-            <Text style={styles.creatorInitial}>
-              {video.user?.username?.[0]?.toUpperCase() || 'K'}
-            </Text>
-          </LinearGradient>
-          <View style={styles.followBadge}>
-            <Ionicons name="add" size={12} color="white" />
+          {/* Landscape indicator */}
+          {isLandscapeVideo && (
+            <View style={styles.landscapeBadge}>
+              <Ionicons name="phone-landscape" size={14} color="white" />
+              <Text style={styles.landscapeBadgeText}>HD</Text>
+            </View>
+          )}
+
+          <View style={styles.topRight}>
+            <TouchableOpacity style={styles.topButton}>
+              <BlurView intensity={30} tint="dark" style={styles.blurButton}>
+                <Ionicons name="search" size={20} color="white" />
+              </BlurView>
+            </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
+      )}
 
-        {/* Like Button */}
-        <TouchableOpacity style={styles.actionButton} onPress={handleLikePress}>
-          <Animated.View style={{ transform: [{ scale: isLiked ? likeScale : 1 }] }}>
+      {/* Right Side Actions - Only show in portrait mode */}
+      {showControls && !isLandscapeMode && (
+        <Animated.View style={[styles.rightActions, { opacity: controlsOpacity }]}>
+          {/* Creator Avatar */}
+          <View style={styles.creatorAvatarContainer}>
+            <LinearGradient
+              colors={[colors.primary, colors.primaryDark]}
+              style={styles.creatorAvatar}
+            >
+              <Text style={styles.creatorInitial}>
+                {video.user?.username?.[0]?.toUpperCase() || 'K'}
+              </Text>
+            </LinearGradient>
+            <View style={styles.followBadge}>
+              <Ionicons name="add" size={12} color="white" />
+            </View>
+          </View>
+
+          {/* Like Button */}
+          <TouchableOpacity style={styles.actionButton} onPress={handleLikePress}>
+            <Animated.View style={{ transform: [{ scale: isLiked ? likeScale : 1 }] }}>
+              <Ionicons
+                name={isLiked ? 'heart' : 'heart-outline'}
+                size={32}
+                color={isLiked ? colors.primary : 'white'}
+              />
+            </Animated.View>
+            <Text style={styles.actionText}>{formatNumber(video.likes || 48200)}</Text>
+          </TouchableOpacity>
+
+          {/* Comment Button */}
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="chatbubble-ellipses-outline" size={30} color="white" />
+            <Text style={styles.actionText}>{formatNumber(1284)}</Text>
+          </TouchableOpacity>
+
+          {/* Bookmark Button */}
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => setIsBookmarked(!isBookmarked)}
+          >
             <Ionicons
-              name={isLiked ? 'heart' : 'heart-outline'}
-              size={32}
-              color={isLiked ? colors.primary : 'white'}
+              name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+              size={28}
+              color={isBookmarked ? colors.primary : 'white'}
             />
-          </Animated.View>
-          <Text style={styles.actionText}>{formatNumber(video.likes || 48200)}</Text>
-        </TouchableOpacity>
+            <Text style={styles.actionText}>Save</Text>
+          </TouchableOpacity>
 
-        {/* Comment Button */}
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="chatbubble-ellipses-outline" size={30} color="white" />
-          <Text style={styles.actionText}>{formatNumber(1284)}</Text>
-        </TouchableOpacity>
+          {/* Share Button */}
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="paper-plane-outline" size={28} color="white" />
+            <Text style={styles.actionText}>Share</Text>
+          </TouchableOpacity>
 
-        {/* Bookmark Button */}
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => setIsBookmarked(!isBookmarked)}
-        >
-          <Ionicons
-            name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-            size={28}
-            color={isBookmarked ? colors.primary : 'white'}
-          />
-          <Text style={styles.actionText}>Save</Text>
-        </TouchableOpacity>
+          {/* More Options */}
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="ellipsis-horizontal" size={24} color="white" />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
-        {/* Share Button */}
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="paper-plane-outline" size={28} color="white" />
-          <Text style={styles.actionText}>Share</Text>
-        </TouchableOpacity>
-
-        {/* More Options */}
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="ellipsis-horizontal" size={24} color="white" />
-        </TouchableOpacity>
-      </Animated.View>
-
-      {/* Bottom Content */}
-      <Animated.View style={[styles.bottomContent, { opacity: controlsOpacity }]}>
-        {/* Creator Info */}
-        <View style={styles.creatorInfo}>
-          <Text style={styles.creatorName}>
-            @{video.user?.username || 'kreels_official'}
-          </Text>
-          <View style={styles.followButton}>
-            <Text style={styles.followText}>Follow</Text>
+      {/* Bottom Content - Only show in portrait mode */}
+      {showControls && !isLandscapeMode && (
+        <Animated.View style={[styles.bottomContent, { opacity: controlsOpacity }]}>
+          {/* Creator Info */}
+          <View style={styles.creatorInfo}>
+            <Text style={styles.creatorName}>
+              @{video.user?.username || 'kreels_official'}
+            </Text>
+            <View style={styles.followButton}>
+              <Text style={styles.followText}>Follow</Text>
+            </View>
           </View>
-        </View>
 
-        {/* Video Title & Description */}
-        <TouchableOpacity
-          onPress={() => setShowFullDescription(!showFullDescription)}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.videoTitle}>{video.title}</Text>
-          <Text
-            style={styles.videoDescription}
-            numberOfLines={showFullDescription ? undefined : 2}
+          {/* Video Title & Description */}
+          <TouchableOpacity
+            onPress={() => setShowFullDescription(!showFullDescription)}
+            activeOpacity={0.9}
           >
-            {video.description}
-            {!showFullDescription && (video.description?.length || 0) > 80 && (
-              <Text style={styles.moreText}> ...more</Text>
-            )}
-          </Text>
-        </TouchableOpacity>
+            <Text style={styles.videoTitle}>{video.title}</Text>
+            <Text
+              style={styles.videoDescription}
+              numberOfLines={showFullDescription ? undefined : 2}
+            >
+              {video.description}
+              {!showFullDescription && (video.description?.length || 0) > 80 && (
+                <Text style={styles.moreText}> ...more</Text>
+              )}
+            </Text>
+          </TouchableOpacity>
 
-        {/* Tags */}
-        <View style={styles.tagsContainer}>
-          <Text style={styles.tagText}>#drama</Text>
-          <Text style={styles.tagText}>#romance</Text>
-          <Text style={styles.tagText}>#kreels</Text>
-        </View>
+          {/* Tags */}
+          <View style={styles.tagsContainer}>
+            <Text style={styles.tagText}>#drama</Text>
+            <Text style={styles.tagText}>#romance</Text>
+            <Text style={styles.tagText}>#kreels</Text>
+          </View>
 
-        {/* Music/Audio */}
-        <View style={styles.musicContainer}>
-          <Ionicons name="musical-notes" size={14} color="white" />
-          <Text style={styles.musicText} numberOfLines={1}>
-            Original Sound - {video.user?.username || 'kreels_official'}
-          </Text>
-        </View>
-      </Animated.View>
+          {/* Music/Audio */}
+          <View style={styles.musicContainer}>
+            <Ionicons name="musical-notes" size={14} color="white" />
+            <Text style={styles.musicText} numberOfLines={1}>
+              Original Sound - {video.user?.username || 'kreels_official'}
+            </Text>
+          </View>
+        </Animated.View>
+      )}
+
+      {/* Landscape Mode Controls */}
+      {showControls && isLandscapeMode && (
+        <Animated.View style={[styles.landscapeControls, { opacity: controlsOpacity }]}>
+          <View style={styles.landscapeBottom}>
+            <Text style={styles.landscapeTitle} numberOfLines={1}>{video.title}</Text>
+            <View style={styles.landscapeActions}>
+              <TouchableOpacity style={styles.landscapeAction} onPress={handleLikePress}>
+                <Ionicons
+                  name={isLiked ? 'heart' : 'heart-outline'}
+                  size={24}
+                  color={isLiked ? colors.primary : 'white'}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.landscapeAction}>
+                <Ionicons name="chatbubble-outline" size={24} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.landscapeAction}>
+                <Ionicons name="share-social-outline" size={24} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.landscapeAction} onPress={restoreOrientation}>
+                <Ionicons name="contract-outline" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+      )}
 
       {/* Progress Bar */}
-      <View style={styles.progressContainer}>
+      <View style={[styles.progressContainer, isLandscapeMode && styles.landscapeProgress]}>
         <View style={[styles.progressBar, { width: `${progress}%` }]} />
       </View>
 
-      {/* Bottom Action Bar */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.bottomAction}>
-          <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
-            style={styles.downloadButton}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Ionicons name="download-outline" size={18} color="black" />
-            <Text style={styles.downloadText}>Download</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+      {/* Bottom Action Bar - Only in portrait */}
+      {!isLandscapeMode && (
+        <View style={styles.bottomBar}>
+          <TouchableOpacity style={styles.bottomAction}>
+            <LinearGradient
+              colors={[colors.primary, colors.primaryDark]}
+              style={styles.downloadButton}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name="download-outline" size={18} color="black" />
+              <Text style={styles.downloadText}>Download</Text>
+            </LinearGradient>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.episodeButton}>
-          <Ionicons name="list" size={18} color="white" />
-          <Text style={styles.episodeText}>EP.1 / 58</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.episodeButton}>
+            <Ionicons name="list" size={18} color="white" />
+            <Text style={styles.episodeText}>EP.1 / 58</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.qualityButton}>
-          <Text style={styles.qualityText}>HD</Text>
-          <Ionicons name="chevron-down" size={14} color="white" />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.qualityButton}>
+            <Text style={styles.qualityText}>HD</Text>
+            <Ionicons name="chevron-down" size={14} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -362,13 +495,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
   },
+  landscapeContainer: {
+    flexDirection: 'row',
+  },
   videoContainer: {
     flex: 1,
   },
-  backgroundImage: {
+  video: {
+    flex: 1,
+  },
+  portraitVideo: {
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
-    position: 'absolute',
+  },
+  landscapeVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  poster: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   topGradient: {
     position: 'absolute',
@@ -412,6 +559,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     zIndex: 10,
   },
@@ -426,6 +574,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+  },
+  landscapeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  landscapeBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
   },
   topRight: {
     flexDirection: 'row',
@@ -550,6 +712,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     maxWidth: 200,
   },
+  landscapeControls: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  landscapeBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: 24,
+  },
+  landscapeTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 16,
+  },
+  landscapeActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  landscapeAction: {
+    padding: 8,
+  },
   progressContainer: {
     position: 'absolute',
     bottom: 80,
@@ -557,6 +749,9 @@ const styles = StyleSheet.create({
     right: 0,
     height: 3,
     backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  landscapeProgress: {
+    bottom: 60,
   },
   progressBar: {
     height: '100%',
