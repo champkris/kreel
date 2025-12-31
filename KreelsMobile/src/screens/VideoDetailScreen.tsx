@@ -25,6 +25,7 @@ import { VerifiedBadge, BadgeRow, RankBadge } from '../components/common';
 import type { BadgeData, RankData } from '../components/common';
 import { videosAPI, usersAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import FullScreenVideoPlayer, { VideoOrientation } from '../components/video/FullScreenVideoPlayer';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -54,6 +55,8 @@ interface VideoData {
   title: string;
   description?: string;
   thumbnail?: string;
+  videoUrl?: string;
+  orientation?: VideoOrientation; // 'portrait' | 'landscape' | 'auto'
   viewCount: number;
   likeCount: number;
   commentCount: number;
@@ -85,6 +88,7 @@ export default function VideoDetailScreen() {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
 
   useEffect(() => {
     fetchVideoDetails();
@@ -281,7 +285,10 @@ export default function VideoDetailScreen() {
               style={styles.videoThumbnail}
             />
             <View style={styles.playOverlay}>
-              <TouchableOpacity style={styles.playButton}>
+              <TouchableOpacity
+                style={styles.playButton}
+                onPress={() => setShowVideoPlayer(true)}
+              >
                 <Ionicons name="play" size={40} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
@@ -442,6 +449,17 @@ export default function VideoDetailScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Fullscreen Video Player */}
+      <FullScreenVideoPlayer
+        videoUrl={video?.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'}
+        thumbnailUrl={video?.thumbnail || paramThumbnail}
+        title={video?.title || paramTitle}
+        orientation={video?.orientation || 'auto'}
+        visible={showVideoPlayer}
+        onClose={() => setShowVideoPlayer(false)}
+        autoPlay={true}
+      />
     </SafeAreaView>
   );
 }

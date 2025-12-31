@@ -22,6 +22,7 @@ import { spacing } from '../theme/spacing';
 import { VerifiedBadge, BadgeRow } from '../components/common';
 import type { BadgeData } from '../components/common';
 import { seriesAPI } from '../services/api';
+import FullScreenVideoPlayer, { VideoOrientation } from '../components/video/FullScreenVideoPlayer';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -139,6 +140,8 @@ export default function SeriesDetailScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('episodes');
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const [isInMyList, setIsInMyList] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
 
   useEffect(() => {
     fetchSeriesDetails();
@@ -258,8 +261,9 @@ export default function SeriesDetailScreen() {
 
   const handleEpisodePress = (episode: Episode) => {
     if (episode.accessType === 'FREE') {
-      // Play episode
-      console.log('Playing episode:', episode.title);
+      // Play episode in fullscreen
+      setCurrentEpisode(episode);
+      setShowVideoPlayer(true);
     } else if (episode.accessType === 'LOCKED') {
       // Show unlock prompt (subscribe or watch ads)
       console.log('Episode locked:', episode.title);
@@ -568,6 +572,20 @@ export default function SeriesDetailScreen() {
 
         <View style={{ height: spacing['3xl'] }} />
       </ScrollContainer>
+
+      {/* Fullscreen Video Player */}
+      <FullScreenVideoPlayer
+        videoUrl={currentEpisode ? `https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4` : ''}
+        thumbnailUrl={currentEpisode?.thumbnail || series?.thumbnail || paramThumbnail}
+        title={currentEpisode ? `${series?.title} - Ep.${currentEpisode.episodeNumber}: ${currentEpisode.title}` : ''}
+        orientation="auto"
+        visible={showVideoPlayer}
+        onClose={() => {
+          setShowVideoPlayer(false);
+          setCurrentEpisode(null);
+        }}
+        autoPlay={true}
+      />
     </SafeAreaView>
   );
 }
