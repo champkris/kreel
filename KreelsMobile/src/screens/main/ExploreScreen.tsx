@@ -101,6 +101,23 @@ export default function ExploreScreen() {
     });
   };
 
+  const handleMoviePress = (movie: typeof newReleases[0]) => {
+    navigation.navigate('VideoDetail', {
+      id: movie.id,
+      title: movie.title,
+      thumbnail: movie.image,
+    });
+  };
+
+  const handleClubPress = (club: typeof trendingClubs[0]) => {
+    navigation.navigate('ClubDetail', {
+      id: club.id,
+      name: club.name,
+      members: club.members,
+      image: club.image,
+    });
+  };
+
   const renderGenreCard = ({ item }: { item: typeof genres[0] }) => (
     <TouchableOpacity
       style={styles.genreCard}
@@ -131,7 +148,7 @@ export default function ExploreScreen() {
   );
 
   const renderNewReleaseCard = ({ item }: { item: typeof newReleases[0] }) => (
-    <TouchableOpacity style={styles.releaseCard}>
+    <TouchableOpacity style={styles.releaseCard} onPress={() => handleMoviePress(item)}>
       <ImageBackground
         source={{ uri: item.image }}
         style={styles.releaseImage}
@@ -150,7 +167,7 @@ export default function ExploreScreen() {
   const renderCircleAvatar = ({ item, type }: { item: any; type: 'club' | 'creator' }) => (
     <TouchableOpacity
       style={styles.circleItem}
-      onPress={type === 'creator' ? () => handleCreatorPress(item) : undefined}
+      onPress={type === 'creator' ? () => handleCreatorPress(item) : () => handleClubPress(item)}
     >
       <View style={styles.circleAvatar}>
         {item.image ? (
