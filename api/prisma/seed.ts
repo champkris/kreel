@@ -197,6 +197,91 @@ async function main() {
     }
   });
 
+  // 6. Dora Mitchell - Sports Romance Creator
+  const doraCreator = await prisma.user.create({
+    data: {
+      email: 'dora@kreels.com',
+      username: 'dora_hockey',
+      displayName: 'Dora Mitchell',
+      password: hashedPassword,
+      userType: 'INDIVIDUAL',
+      bio: 'Hockey enthusiast and college student. Creating sports romance content! 🏒💕',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b169a82b?w=150&h=150&fit=crop&crop=face',
+      country: 'US',
+      experiencePoints: 3500,
+      currentLevel: 55,
+      currentRankId: rankTiers[2].id
+    }
+  });
+
+  // 7. Elena Rodriguez - Mystery Writer
+  const elenaCreator = await prisma.user.create({
+    data: {
+      email: 'elena@kreels.com',
+      username: 'mystery_writer',
+      displayName: 'Elena Rodriguez',
+      password: hashedPassword,
+      userType: 'INDIVIDUAL',
+      bio: 'Mystery novelist and storyteller. Bringing thrilling tales to life! 🎭✨',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+      country: 'US',
+      experiencePoints: 12000,
+      currentLevel: 120,
+      currentRankId: rankTiers[3].id
+    }
+  });
+
+  // 8. Sophie Kim - Fantasy Creator
+  const sophieCreator = await prisma.user.create({
+    data: {
+      email: 'sophie@kreels.com',
+      username: 'fantasy_realm',
+      displayName: 'Sophie Kim',
+      password: hashedPassword,
+      userType: 'INDIVIDUAL',
+      bio: 'Fantasy world builder. Werewolves, alphas, and magical romance await! 🐺✨',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
+      country: 'KR',
+      experiencePoints: 8500,
+      currentLevel: 95,
+      currentRankId: rankTiers[2].id
+    }
+  });
+
+  // 9. Jake Thompson - Action Creator
+  const jakeCreator = await prisma.user.create({
+    data: {
+      email: 'jake@kreels.com',
+      username: 'action_zone',
+      displayName: 'Jake Thompson',
+      password: hashedPassword,
+      userType: 'INDIVIDUAL',
+      bio: 'Action & thriller content creator. Edge-of-your-seat entertainment! 💥🎬',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+      country: 'US',
+      experiencePoints: 6000,
+      currentLevel: 75,
+      currentRankId: rankTiers[2].id
+    }
+  });
+
+  // 10. Isabella Wang - Historical Drama Creator
+  const isabellaCreator = await prisma.user.create({
+    data: {
+      email: 'isabella@kreels.com',
+      username: 'royal_tales',
+      displayName: 'Isabella Wang',
+      password: hashedPassword,
+      userType: 'PROFESSIONAL',
+      bio: 'Historical drama & palace intrigue specialist. Step into the royal court! 👑🏰',
+      avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=150&h=150&fit=crop&crop=face',
+      country: 'CN',
+      experiencePoints: 18000,
+      currentLevel: 180,
+      currentRankId: rankTiers[3].id
+    }
+  });
+
   // Create team member for professional account
   const teamMember = await prisma.user.create({
     data: {
@@ -898,6 +983,232 @@ async function main() {
         previewDuration: 60,
         viewCount: 3200,
         likeCount: 567
+      }
+    }),
+    // Dora Mitchell's videos - Sports Romance
+    prisma.video.create({
+      data: {
+        title: 'A Deal With The Hockey Captain',
+        description: 'College hockey star Leo makes an unexpected deal with shy Dora. What starts as fake dating becomes something more.',
+        thumbnail: 'https://images.unsplash.com/photo-1461896836934-28e4b76f67b9?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/hockey1.mp4',
+        duration: 1800,
+        creatorId: doraCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 2850000,
+        likeCount: 185000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Hockey Hearts: Episode 2',
+        description: 'The team discovers their secret. Can they keep up the act under pressure?',
+        thumbnail: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/hockey2.mp4',
+        duration: 1920,
+        creatorId: doraCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 1950000,
+        likeCount: 142000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Hockey Hearts: The Championship',
+        description: 'The big game arrives, but so do real feelings. Will love win?',
+        thumbnail: 'https://images.unsplash.com/photo-1515703407324-5f753afd8be8?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/hockey3.mp4',
+        duration: 2100,
+        creatorId: doraCreator.id,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 60,
+        viewCount: 1680000,
+        likeCount: 125000
+      }
+    }),
+    // Elena Rodriguez's videos - Mystery/Thriller
+    prisma.video.create({
+      data: {
+        title: 'The Silent Witness',
+        description: 'A murder mystery unfolds in a small town. Nothing is as it seems.',
+        thumbnail: 'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/mystery1.mp4',
+        duration: 2400,
+        creatorId: elenaCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 1250000,
+        likeCount: 89000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Midnight Secrets',
+        description: 'Dark secrets emerge when an old diary is discovered.',
+        thumbnail: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/mystery2.mp4',
+        duration: 2100,
+        creatorId: elenaCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 980000,
+        likeCount: 72000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'The Last Clue',
+        description: 'The thrilling conclusion. Who is the killer?',
+        thumbnail: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/mystery3.mp4',
+        duration: 2700,
+        creatorId: elenaCreator.id,
+        isPublished: true,
+        accessType: 'PAID',
+        price: 1.99,
+        isPaid: true,
+        isFree: false,
+        previewDuration: 60,
+        viewCount: 750000,
+        likeCount: 58000
+      }
+    }),
+    // Sophie Kim's videos - Fantasy/Werewolf
+    prisma.video.create({
+      data: {
+        title: 'The Alpha\'s Forbidden Mate',
+        description: 'She was supposed to be his enemy. But fate had other plans.',
+        thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/wolf1.mp4',
+        duration: 1800,
+        creatorId: sophieCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 3200000,
+        likeCount: 245000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Moonlit Destiny',
+        description: 'Under the full moon, their bond grows stronger.',
+        thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/wolf2.mp4',
+        duration: 2100,
+        creatorId: sophieCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 2450000,
+        likeCount: 198000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Pack Wars',
+        description: 'War threatens to tear them apart. Will love survive?',
+        thumbnail: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/wolf3.mp4',
+        duration: 2400,
+        creatorId: sophieCreator.id,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 60,
+        viewCount: 1890000,
+        likeCount: 156000
+      }
+    }),
+    // Jake Thompson's videos - Action/Thriller
+    prisma.video.create({
+      data: {
+        title: 'The Extraction',
+        description: 'A high-stakes rescue mission goes wrong. Now they must fight to survive.',
+        thumbnail: 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/action1.mp4',
+        duration: 2100,
+        creatorId: jakeCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 1560000,
+        likeCount: 112000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'No Way Out',
+        description: 'Trapped in enemy territory with no backup. Only skill and courage will save them.',
+        thumbnail: 'https://images.unsplash.com/photo-1533488765986-dfa2a9939acd?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/action2.mp4',
+        duration: 2400,
+        creatorId: jakeCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 1320000,
+        likeCount: 98000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Final Stand',
+        description: 'The explosive finale. Heroes are made in moments like these.',
+        thumbnail: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/action3.mp4',
+        duration: 2700,
+        creatorId: jakeCreator.id,
+        isPublished: true,
+        accessType: 'PAID',
+        price: 2.49,
+        isPaid: true,
+        isFree: false,
+        previewDuration: 60,
+        viewCount: 980000,
+        likeCount: 78000
+      }
+    }),
+    // Isabella Wang's videos - Historical/Palace Drama
+    prisma.video.create({
+      data: {
+        title: 'The Emperor\'s Secret',
+        description: 'In the palace, trust is a luxury. A young concubine discovers a deadly secret.',
+        thumbnail: 'https://images.unsplash.com/photo-1551410224-699683e15636?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/palace1.mp4',
+        duration: 2100,
+        creatorId: isabellaCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 2100000,
+        likeCount: 168000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Rise of the Phoenix',
+        description: 'From servant to empress. Her revenge has just begun.',
+        thumbnail: 'https://images.unsplash.com/photo-1577083552431-6e5fd01988ec?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/palace2.mp4',
+        duration: 2400,
+        creatorId: isabellaCreator.id,
+        isPublished: true,
+        accessType: 'FREE',
+        viewCount: 1850000,
+        likeCount: 145000
+      }
+    }),
+    prisma.video.create({
+      data: {
+        title: 'Crown of Thorns',
+        description: 'The throne comes at a price. Is she willing to pay it?',
+        thumbnail: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=600&fit=crop',
+        videoUrl: 'https://sample-videos.com/palace3.mp4',
+        duration: 2700,
+        creatorId: isabellaCreator.id,
+        isPublished: true,
+        accessType: 'LOCKED',
+        previewDuration: 60,
+        viewCount: 1580000,
+        likeCount: 128000
       }
     })
   ]);
