@@ -21,16 +21,21 @@ export interface Video {
   description?: string;
   url: string;
   thumbnailUrl?: string;
+  thumbnail?: string; // API uses thumbnail
   duration: number;
-  views: number;
-  likes: number;
-  comments: number;
-  shares: number;
-  userId: string;
-  user: User;
-  tags: string[];
-  isLiked: boolean;
-  isFollowing: boolean;
+  views?: number;
+  viewCount?: number; // API uses viewCount
+  likes?: number;
+  likeCount?: number; // API uses likeCount
+  comments?: number;
+  shares?: number;
+  userId?: string;
+  creatorId?: string; // API uses creatorId
+  user?: User;
+  creator?: User; // API uses creator
+  tags?: string[];
+  isLiked?: boolean;
+  isFollowing?: boolean;
   createdAt: string;
 }
 

@@ -142,7 +142,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
             </View>
           )}
           <Text style={styles.category}>
-            {getCategoryName(video.tags)}
+            {getCategoryName(video.tags || [])}
           </Text>
         </View>
       )}

@@ -857,38 +857,38 @@ export const getVideosByCategory = (category: string): Video[] => {
   switch (category) {
     case 'Popular':
       return mockVideos.filter(video =>
-        video.views > 10000000 || video.tags.includes('hot')
-      ).sort((a, b) => b.views - a.views);
+        (video.views || 0) > 10000000 || (video.tags || []).includes('hot')
+      ).sort((a, b) => (b.views || 0) - (a.views || 0));
     case 'New':
       return mockVideos.filter(video =>
-        video.tags.includes('new') ||
+        (video.tags || []).includes('new') ||
         new Date(video.createdAt) > new Date('2024-07-01')
       );
     case 'Rankings':
-      return [...mockVideos].sort((a, b) => b.likes - a.likes);
+      return [...mockVideos].sort((a, b) => (b.likes || 0) - (a.likes || 0));
     case 'Categories':
       return mockVideos.filter(video =>
-        video.tags.includes('hot') && video.views > 5000000
+        (video.tags || []).includes('hot') && (video.views || 0) > 5000000
       );
     case 'Romance':
       return mockVideos.filter(video =>
-        video.tags.includes('romance') || video.tags.includes('love triangle')
+        (video.tags || []).includes('romance') || (video.tags || []).includes('love triangle')
       );
     case 'Fantasy':
       return mockVideos.filter(video =>
-        video.tags.includes('fantasy') || video.tags.includes('werewolf')
+        (video.tags || []).includes('fantasy') || (video.tags || []).includes('werewolf')
       );
     case 'Counterattack':
       return mockVideos.filter(video =>
-        video.tags.includes('counterattack') || video.tags.includes('revenge')
+        (video.tags || []).includes('counterattack') || (video.tags || []).includes('revenge')
       );
     case 'Heroine':
       return mockVideos.filter(video =>
-        video.tags.includes('strong heroine') || video.tags.includes('heroine')
+        (video.tags || []).includes('strong heroine') || (video.tags || []).includes('heroine')
       );
     case 'Original+':
       return mockVideos.filter(video =>
-        video.tags.includes('exclusive') || video.tags.includes('original')
+        (video.tags || []).includes('exclusive') || (video.tags || []).includes('original')
       );
     default:
       return mockVideos;
@@ -993,16 +993,17 @@ export const getFollowingVideos = (): Video[] => {
 
 export const getTrendingVideos = (): Video[] => {
   return [...mockVideos]
-    .sort((a, b) => b.views - a.views)
+    .sort((a, b) => (b.views || 0) - (a.views || 0))
     .slice(0, 10);
 };
 
 export const getDramaVideos = (): Video[] => {
-  return mockVideos.filter(video =>
-    video.tags.includes('drama') ||
-    video.tags.includes('romance') ||
-    video.tags.includes('betrayal')
-  );
+  return mockVideos.filter(video => {
+    const tags = video.tags || [];
+    return tags.includes('drama') ||
+      tags.includes('romance') ||
+      tags.includes('betrayal');
+  });
 };
 
 export const getLiveVideos = (): Video[] => {
