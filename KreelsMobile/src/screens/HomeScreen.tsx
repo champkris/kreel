@@ -158,7 +158,11 @@ export default function HomeScreen() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Text style={styles.logo}>KREELS</Text>
+      <Image
+        source={require('../../assets/Kreels_logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
       <View style={styles.headerRight}>
         {/* Daily Rewards Button */}
         <TouchableOpacity
@@ -632,10 +636,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   logo: {
-    color: colors.textPrimary,
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    letterSpacing: 2,
+    width: 100,
+    height: 32,
   },
   headerRight: {
     flexDirection: 'row',
