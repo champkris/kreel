@@ -12,6 +12,7 @@ import {
   ImageBackground,
   Dimensions,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,7 +26,9 @@ import { Card, VerifiedBadge } from '../../components/common';
 import { clubsAPI, challengesAPI } from '../../services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
-const clubCardWidth = (screenWidth - spacing.screenPadding * 2 - spacing.md) / 2;
+// On web, limit container width to mobile-like dimensions for consistent card sizing
+const effectiveWidth = Platform.OS === 'web' ? Math.min(screenWidth, 428) : screenWidth;
+const clubCardWidth = (effectiveWidth - spacing.screenPadding * 2 - spacing.md) / 2;
 
 type TabType = 'feed' | 'allClubs' | 'challenges';
 
