@@ -156,13 +156,20 @@ export default function HomeScreen() {
     setSelectedVideo(null);
   };
 
+  const handleLogoPress = () => {
+    // Reset to default state - Trending tab and scroll to top
+    setActiveTab('Trending');
+  };
+
   const renderHeader = () => (
     <View style={styles.header}>
-      <Image
-        source={require('../../assets/Kreels_logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+      <TouchableOpacity onPress={handleLogoPress} activeOpacity={0.7}>
+        <Image
+          source={require('../../assets/Kreels_logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
       <View style={styles.headerRight}>
         {/* Daily Rewards Button */}
         <TouchableOpacity

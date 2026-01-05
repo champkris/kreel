@@ -24,6 +24,7 @@ import SeriesDetailScreen from '../screens/SeriesDetailScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
 import ChallengeDetailScreen from '../screens/ChallengeDetailScreen';
 import DailyRewardsScreen from '../screens/DailyRewardsScreen';
+import CreateClubScreen from '../screens/CreateClubScreen';
 
 // New screens
 import {
@@ -136,6 +137,8 @@ export type RootStackParamList = {
   };
   // Daily Rewards
   DailyRewards: undefined;
+  // Create Club
+  CreateClub: undefined;
 };
 
 export type AuthStackParamList = {
@@ -457,6 +460,7 @@ export default function AppNavigator() {
         <RootStack.Screen name="Challenges" component={ChallengesScreen} />
         <RootStack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} />
         <RootStack.Screen name="DailyRewards" component={DailyRewardsScreen} />
+        <RootStack.Screen name="CreateClub" component={CreateClubScreen} />
       </RootStack.Navigator>
     </NavigationContainer>
   );

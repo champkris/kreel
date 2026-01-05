@@ -11,7 +11,6 @@ import {
   Image,
   ImageBackground,
   Dimensions,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -123,7 +122,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function ClubsScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [activeTab, setActiveTab] = useState<TabType>('feed');
+  const [activeTab, setActiveTab] = useState<TabType>('allClubs');
   const [clubs, setClubs] = useState<ClubData[]>([]);
   const [loading, setLoading] = useState(true);
   const [challenges, setChallenges] = useState<ChallengeData[]>([]);
@@ -202,7 +201,7 @@ export default function ClubsScreen() {
   };
 
   const handleCreateClub = () => {
-    Alert.alert('Create Club', 'Create Club feature coming soon!');
+    navigation.navigate('CreateClub');
   };
 
   const handleAuthorPress = (author: string) => {
@@ -418,6 +417,15 @@ export default function ClubsScreen() {
           </Text>
           {loading ? (
             <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: spacing.xl }} />
+          ) : regularClubs.length === 0 && trendingClubs.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="people-outline" size={64} color={colors.textMuted} />
+              <Text style={styles.emptyStateTitle}>No Clubs Yet</Text>
+              <Text style={styles.emptyStateText}>No clubs have been created yet. Be the first to create one!</Text>
+              <TouchableOpacity style={styles.createClubCTA} onPress={handleCreateClub}>
+                <Text style={styles.createClubCTAText}>Create a Club</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <View style={styles.clubsGrid}>
               {(regularClubs.length > 0 ? regularClubs : trendingClubs).map((club) => {
@@ -547,19 +555,19 @@ export default function ClubsScreen() {
       {/* Tabs */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'feed' && styles.tabActive]}
-          onPress={() => setActiveTab('feed')}
-        >
-          <Text style={[styles.tabText, activeTab === 'feed' && styles.tabTextActive]}>
-            Feed
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
           style={[styles.tab, activeTab === 'allClubs' && styles.tabActive]}
           onPress={() => setActiveTab('allClubs')}
         >
           <Text style={[styles.tabText, activeTab === 'allClubs' && styles.tabTextActive]}>
             All Clubs
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'feed' && styles.tabActive]}
+          onPress={() => setActiveTab('feed')}
+        >
+          <Text style={[styles.tabText, activeTab === 'feed' && styles.tabTextActive]}>
+            Feed
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -931,9 +939,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing['3xl'],
   },
+  emptyStateTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
   emptyStateText: {
     color: colors.textMuted,
     fontSize: typography.fontSize.md,
     marginTop: spacing.md,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  createClubCTA: {
+    backgroundColor: colors.primary,
+    borderRadius: spacing.borderRadius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.lg,
+  },
+  createClubCTAText: {
+    color: colors.background,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
   },
 });
