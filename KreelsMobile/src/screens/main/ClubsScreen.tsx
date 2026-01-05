@@ -434,10 +434,10 @@ export default function ClubsScreen() {
             </View>
           ) : (
             <View style={styles.clubsGrid}>
-              {(regularClubs.length > 0 ? regularClubs : trendingClubs).map((club) => {
-                const isApiClub = 'memberCount' in club;
-                const members = isApiClub ? formatMemberCount((club as ClubData).memberCount) : (club as typeof trendingClubs[0]).members;
-                const isOfficial = isApiClub && (club as ClubData).isOfficial;
+              {/* Always show trendingClubs for consistent display across platforms */}
+              {trendingClubs.map((club) => {
+                const members = club.members;
+                const isOfficial = false;
 
                 return (
                   <TouchableOpacity
