@@ -527,10 +527,10 @@ export default function ClubsScreen() {
                     <Text style={styles.challengeCardTitle}>{challenge.title}</Text>
                     <View style={styles.challengeMeta}>
                       <Ionicons name="people" size={14} color={colors.textMuted} />
-                      <Text style={styles.challengeMetaText}>{challenge.entries} Entry</Text>
+                      <Text style={styles.challengeMetaText}>{challenge.entries || 0} Entry</Text>
                     </View>
                     <TouchableOpacity style={styles.prizeBadge}>
-                      <Text style={styles.prizeText}>{challenge.prize}</Text>
+                      <Text style={styles.prizeText}>{challenge.prize || 'Prize'}</Text>
                     </TouchableOpacity>
                   </View>
                 </Card>

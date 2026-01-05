@@ -113,7 +113,18 @@ export default function ClubDetailScreen() {
     try {
       const response = await challengesAPI.getChallenges(1, 20, undefined, id);
       if (response.success && response.data?.length > 0) {
-        setChallenges(response.data);
+        // Transform API data to match expected shape
+        setChallenges(response.data.map((c: any) => ({
+          id: c.id,
+          title: c.title || 'Untitled Challenge',
+          description: c.description || '',
+          status: c.status || 'ACTIVE',
+          entryTier: c.entryTier || 'FREE',
+          rewardType: c.rewardType || 'COINS',
+          rewardAmount: c.rewardAmount || 0,
+          entriesCount: c.entriesCount || 0,
+          endDate: c.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        })));
       } else {
         setChallenges(mockChallenges);
       }
@@ -333,7 +344,7 @@ export default function ClubDetailScreen() {
                           size={12}
                           color={colors.primary}
                         />
-                        <Text style={styles.tierText}>{challenge.entryTier.replace('_', ' ')}</Text>
+                        <Text style={styles.tierText}>{(challenge.entryTier || 'FREE').replace('_', ' ')}</Text>
                       </View>
                     </View>
 
@@ -345,15 +356,15 @@ export default function ClubDetailScreen() {
                     <View style={styles.challengeFooter}>
                       <View style={styles.challengeStat}>
                         <Ionicons name="people-outline" size={14} color={colors.textMuted} />
-                        <Text style={styles.statText}>{challenge.entriesCount} entries</Text>
+                        <Text style={styles.statText}>{challenge.entriesCount || 0} entries</Text>
                       </View>
                       <View style={styles.challengeStat}>
                         <Ionicons name="gift-outline" size={14} color={colors.primary} />
                         <Text style={[styles.statText, { color: colors.primary }]}>
-                          {challenge.rewardAmount} coins
+                          {challenge.rewardAmount || 0} coins
                         </Text>
                       </View>
-                      <Text style={styles.timeRemaining}>{getTimeRemaining(challenge.endDate)}</Text>
+                      <Text style={styles.timeRemaining}>{getTimeRemaining(challenge.endDate || new Date().toISOString())}</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
