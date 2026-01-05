@@ -822,6 +822,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
+    maxWidth: effectiveWidth - spacing.screenPadding * 2,
   },
   clubCard: {
     width: clubCardWidth,
