@@ -104,6 +104,10 @@ export default function ProfileScreen() {
     Alert.alert('Edit Profile', 'Edit Profile feature coming soon!');
   };
 
+  const handleCreateChannel = () => {
+    navigation.navigate('CreateChannel' as never);
+  };
+
   const handleSettings = () => {
     navigation.navigate('Settings' as never);
   };
@@ -243,6 +247,27 @@ export default function ProfileScreen() {
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Upgrade to Pro Banner */}
+        <TouchableOpacity onPress={() => navigation.navigate('UpgradePro' as never)}>
+          <LinearGradient
+            colors={['#FFD700', '#FFA500']}
+            style={styles.upgradeBanner}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <View style={styles.upgradeContent}>
+              <View style={styles.upgradeIconContainer}>
+                <Ionicons name="star" size={24} color="#000" />
+              </View>
+              <View style={styles.upgradeTextContent}>
+                <Text style={styles.upgradeTitle}>Upgrade to Pro</Text>
+                <Text style={styles.upgradeSubtitle}>Unlock all content & features</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#000" />
+          </LinearGradient>
+        </TouchableOpacity>
 
         {/* XP Progress */}
         <View style={styles.xpSection}>
@@ -384,9 +409,19 @@ export default function ProfileScreen() {
             </View>
           ) : (
             <View style={styles.emptyContent}>
-              <Ionicons name="videocam-outline" size={48} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No videos yet</Text>
-              <Text style={styles.emptySubtext}>Start creating to share your content!</Text>
+              <View style={styles.createChannelCard}>
+                <View style={styles.createChannelIcon}>
+                  <Ionicons name="videocam" size={32} color={colors.primary} />
+                </View>
+                <Text style={styles.createChannelTitle}>Start Your Channel</Text>
+                <Text style={styles.createChannelDesc}>
+                  Create your channel to upload videos, go live, and grow your audience on Kreels
+                </Text>
+                <TouchableOpacity style={styles.createChannelButton} onPress={handleCreateChannel}>
+                  <Ionicons name="add-circle" size={20} color={colors.background} />
+                  <Text style={styles.createChannelButtonText}>Create Channel</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </View>
@@ -526,6 +561,39 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.medium,
+  },
+  // Upgrade Banner Styles
+  upgradeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.screenPadding,
+    marginBottom: spacing.xl,
+    borderRadius: spacing.borderRadius.lg,
+    padding: spacing.md,
+  },
+  upgradeContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  upgradeIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upgradeTextContent: {},
+  upgradeTitle: {
+    color: '#000',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+  },
+  upgradeSubtitle: {
+    color: 'rgba(0,0,0,0.7)',
+    fontSize: typography.fontSize.sm,
   },
   xpSection: {
     paddingHorizontal: spacing.screenPadding,
@@ -711,18 +779,52 @@ const styles = StyleSheet.create({
   },
   emptyContent: {
     alignItems: 'center',
-    paddingVertical: spacing['3xl'],
+    paddingVertical: spacing.xl,
   },
-  emptyText: {
+  createChannelCard: {
+    backgroundColor: colors.surface,
+    borderRadius: spacing.borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    width: '100%',
+  },
+  createChannelIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.surfaceLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  createChannelTitle: {
     color: colors.textPrimary,
     fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    marginTop: spacing.md,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.sm,
   },
-  emptySubtext: {
+  createChannelDesc: {
     color: colors.textMuted,
     fontSize: typography.fontSize.md,
-    marginTop: spacing.xs,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 22,
+  },
+  createChannelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: spacing.borderRadius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    gap: spacing.sm,
+  },
+  createChannelButtonText: {
+    color: colors.background,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
   },
   logoutSection: {
     paddingHorizontal: spacing.screenPadding,

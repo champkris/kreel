@@ -9,3 +9,4 @@ export { default as HelpScreen } from './HelpScreen';
 export { default as CouponsRewardsScreen } from './CouponsRewardsScreen';
 export { default as ManageSubscriptionScreen } from './ManageSubscriptionScreen';
 export { default as TopUpScreen } from './TopUpScreen';
+export { default as UpgradeProScreen } from './UpgradeProScreen';

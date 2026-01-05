@@ -35,6 +35,7 @@ import {
   getTrendingVideos,
   getDramaVideos,
   getLiveVideos,
+  getFollowedChannels,
 } from '../data/seedData';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -47,14 +48,8 @@ const gridCardWidth = Math.floor((effectiveWidth - spacing.screenPadding * 2 - s
 
 type TabType = 'Following' | 'Trending' | 'Drama' | 'Live';
 
-// Mock data for the new design
-const followedChannels = [
-  { id: '1', name: 'Channel 1', avatar: null },
-  { id: '2', name: 'Channel 2', avatar: null },
-  { id: '3', name: 'Channel 3', avatar: null },
-  { id: '4', name: 'Channel 4', avatar: null },
-  { id: '5', name: 'Channel 5', avatar: null },
-];
+// Get followed channels from seed data
+const followedChannels = getFollowedChannels();
 
 const continueWatching = mockVideos.slice(0, 4).map((video, index) => ({
   ...video,
@@ -274,13 +269,17 @@ export default function HomeScreen() {
             style={styles.channelItem}
             onPress={() => handleChannelPress(item)}
           >
-            <View style={styles.channelAvatar}>
-              <LinearGradient
-                colors={[colors.primary, colors.primaryDark]}
-                style={StyleSheet.absoluteFill}
-              />
-              <Text style={styles.channelInitial}>{item.name[0]}</Text>
-            </View>
+            {item.avatar ? (
+              <Image source={{ uri: item.avatar }} style={styles.channelAvatar} />
+            ) : (
+              <View style={styles.channelAvatar}>
+                <LinearGradient
+                  colors={[colors.primary, colors.primaryDark]}
+                  style={StyleSheet.absoluteFill}
+                />
+                <Text style={styles.channelInitial}>{item.name[0]}</Text>
+              </View>
+            )}
             <Text style={styles.channelName} numberOfLines={1}>{item.name}</Text>
           </TouchableOpacity>
         )}

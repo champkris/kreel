@@ -20,7 +20,7 @@ import { spacing } from '../theme/spacing';
 import { Badge, BadgeRow, VerifiedBadge, RankBadge, XPProgress } from '../components/common';
 import type { BadgeData, RankData } from '../components/common';
 import VideoCard from '../components/video/VideoCard';
-import { mockVideos } from '../data/seedData';
+import { mockVideos, mockChannels, getVideosByChannelId } from '../data/seedData';
 import { Video } from '../types';
 import { usersAPI, videosAPI } from '../services/api';
 
@@ -73,11 +73,38 @@ export default function ChannelScreen() {
       if (response.success) {
         setProfile(response.data);
         setIsFollowing(response.data.isFollowing || false);
+      } else {
+        // Fallback to mock data
+        loadMockProfile();
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      // Fallback to mock data
+      loadMockProfile();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMockProfile = () => {
+    const mockChannel = mockChannels.find(c => c.id === id);
+    if (mockChannel) {
+      setProfile({
+        id: mockChannel.id,
+        username: mockChannel.username,
+        displayName: mockChannel.name,
+        avatar: mockChannel.avatar,
+        bio: mockChannel.bio,
+        userType: 'creator',
+        experiencePoints: 15000,
+        currentLevel: 12,
+        badges: mockChannel.verified ? [{ id: '1', name: 'Verified', type: 'OFFICIAL', icon: '✓' }] : [],
+        followersCount: mockChannel.followersCount,
+        followingCount: 150,
+        videosCount: mockChannel.videosCount,
+        isFollowing: mockChannel.isFollowing,
+      });
+      setIsFollowing(mockChannel.isFollowing || false);
     }
   };
 
@@ -87,12 +114,15 @@ export default function ChannelScreen() {
       if (response.success) {
         setChannelVideos(response.data);
       } else {
-        // Fallback to mock data
-        setChannelVideos(mockVideos.slice(0, 9));
+        // Fallback to mock data for this channel
+        const channelVids = getVideosByChannelId(id);
+        setChannelVideos(channelVids.length > 0 ? channelVids : mockVideos.slice(0, 6));
       }
     } catch (error) {
       console.error('Error fetching videos:', error);
-      setChannelVideos(mockVideos.slice(0, 9));
+      // Fallback to mock data for this channel
+      const channelVids = getVideosByChannelId(id);
+      setChannelVideos(channelVids.length > 0 ? channelVids : mockVideos.slice(0, 6));
     }
   };
 
@@ -125,10 +155,10 @@ export default function ChannelScreen() {
   const handleFollow = async () => {
     try {
       if (isFollowing) {
-        await usersAPI.unfollowUser(id);
+        await usersAPI.unfollow(id);
         setIsFollowing(false);
       } else {
-        await usersAPI.followUser(id);
+        await usersAPI.follow(id);
         setIsFollowing(true);
       }
     } catch (error) {

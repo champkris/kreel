@@ -14,6 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -133,8 +135,10 @@ const isVideoType = (type: ViewAllType): boolean => {
   return ['followed_channels', 'continue_watching', 'series', 'trending', 'following', 'drama', 'popular', 'new_releases'].includes(type);
 };
 
+type NavigationProp = StackNavigationProp<RootStackParamList>;
+
 export default function ViewAllScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<ViewAllParams, 'ViewAll'>>();
   const { type, title } = route.params;
 
@@ -143,6 +147,10 @@ export default function ViewAllScreen() {
 
   const handleVideoPress = (video: Video) => {
     console.log('Video pressed:', video.title);
+  };
+
+  const handleCreateChannel = () => {
+    navigation.navigate('CreateChannel');
   };
 
   const renderHeader = () => (
@@ -159,6 +167,31 @@ export default function ViewAllScreen() {
           <Ionicons name="search" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
+    </View>
+  );
+
+  const renderCreateChannelCard = () => (
+    <View style={styles.createChannelContainer}>
+      <LinearGradient
+        colors={[colors.primary + '20', colors.primaryDark + '10']}
+        style={styles.createChannelCard}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.createChannelContent}>
+          <View style={styles.createChannelIconWrapper}>
+            <Ionicons name="videocam" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.createChannelTextContent}>
+            <Text style={styles.createChannelTitle}>Start Your Own Channel</Text>
+            <Text style={styles.createChannelDesc}>Share your content with the world</Text>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.createChannelButton} onPress={handleCreateChannel}>
+          <Text style={styles.createChannelButtonText}>Create</Text>
+          <Ionicons name="arrow-forward" size={16} color={colors.background} />
+        </TouchableOpacity>
+      </LinearGradient>
     </View>
   );
 
@@ -276,6 +309,7 @@ export default function ViewAllScreen() {
         contentContainerStyle={styles.listContent}
         columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={type === 'followed_channels' ? renderCreateChannelCard : undefined}
         renderItem={({ item }) => (
           <VideoCard
             video={item}
@@ -467,5 +501,58 @@ const styles = StyleSheet.create({
   livestreamCreator: {
     color: colors.textMuted,
     fontSize: typography.fontSize.sm,
+  },
+  // Create Channel Card
+  createChannelContainer: {
+    marginBottom: spacing.lg,
+  },
+  createChannelCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: spacing.borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primary + '30',
+  },
+  createChannelContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.md,
+  },
+  createChannelIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primary + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createChannelTextContent: {
+    flex: 1,
+  },
+  createChannelTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  createChannelDesc: {
+    color: colors.textMuted,
+    fontSize: typography.fontSize.sm,
+  },
+  createChannelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: spacing.borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+  },
+  createChannelButtonText: {
+    color: colors.background,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
 });

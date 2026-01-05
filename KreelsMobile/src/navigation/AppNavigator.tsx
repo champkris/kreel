@@ -25,6 +25,7 @@ import ChallengesScreen from '../screens/ChallengesScreen';
 import ChallengeDetailScreen from '../screens/ChallengeDetailScreen';
 import DailyRewardsScreen from '../screens/DailyRewardsScreen';
 import CreateClubScreen from '../screens/CreateClubScreen';
+import CreateChannelScreen from '../screens/CreateChannelScreen';
 
 // New screens
 import {
@@ -60,6 +61,7 @@ import {
   CouponsRewardsScreen,
   ManageSubscriptionScreen,
   TopUpScreen,
+  UpgradeProScreen,
 } from '../screens/settings';
 
 import LiveStreamViewScreen from '../screens/main/LiveStreamViewScreen';
@@ -139,6 +141,8 @@ export type RootStackParamList = {
   DailyRewards: undefined;
   // Create Club
   CreateClub: undefined;
+  // Create Channel
+  CreateChannel: undefined;
 };
 
 export type AuthStackParamList = {
@@ -451,6 +455,7 @@ export default function AppNavigator() {
         <RootStack.Screen name="CouponsRewards" component={CouponsRewardsScreen} />
         <RootStack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
         <RootStack.Screen name="TopUp" component={TopUpScreen} />
+        <RootStack.Screen name="UpgradePro" component={UpgradeProScreen} />
         <RootStack.Screen name="LiveStreamView" component={LiveStreamViewScreen} />
         <RootStack.Screen name="ViewAll" component={ViewAllScreen} />
         <RootStack.Screen name="Channel" component={ChannelScreen} />
@@ -461,6 +466,7 @@ export default function AppNavigator() {
         <RootStack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} />
         <RootStack.Screen name="DailyRewards" component={DailyRewardsScreen} />
         <RootStack.Screen name="CreateClub" component={CreateClubScreen} />
+        <RootStack.Screen name="CreateChannel" component={CreateChannelScreen} />
       </RootStack.Navigator>
     </NavigationContainer>
   );
