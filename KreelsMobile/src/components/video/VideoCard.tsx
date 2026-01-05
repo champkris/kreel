@@ -79,7 +79,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
         </View>
       );
     }
-    if (tags.includes('hot') || (video.views || 0) > 5000000) { // 5M+ views = Hot
+    if (tags.includes('hot') || (video.viewCount || video.views || 0) > 5000000) { // 5M+ views = Hot
       return (
         <View style={[styles.badge, styles.hotBadge]}>
           <Text style={styles.badgeText}>Hot</Text>
@@ -121,7 +121,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
             <View style={styles.playIcon}>
               <Text style={styles.playIconText}>▶</Text>
             </View>
-            <Text style={styles.viewCount}>{formatViews(video.views)}</Text>
+            <Text style={styles.viewCount}>{formatViews(video.viewCount || video.views)}</Text>
           </View>
         )}
       </View>

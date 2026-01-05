@@ -950,7 +950,10 @@ export const getRankingsData = () => {
 };
 
 // Helper functions for formatting
-export const formatViews = (views: number): string => {
+export const formatViews = (views: number | undefined | null): string => {
+  if (views === undefined || views === null) {
+    return '0';
+  }
   if (views >= 1000000) {
     return `${(views / 1000000).toFixed(1)}M`;
   } else if (views >= 1000) {
