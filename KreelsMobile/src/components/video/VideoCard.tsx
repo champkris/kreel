@@ -104,7 +104,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
     >
       <View style={[styles.imageContainer, { height: cardHeight }]}>
         <Image
-          source={{ uri: video.thumbnailUrl || 'https://images.unsplash.com/photo-1616530940355-351fabd9524b?w=400&h=600&fit=crop' }}
+          source={{ uri: video.thumbnail || video.thumbnailUrl || 'https://images.unsplash.com/photo-1616530940355-351fabd9524b?w=400&h=600&fit=crop' }}
           style={styles.thumbnail}
           resizeMode="cover"
         />
