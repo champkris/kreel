@@ -181,7 +181,10 @@ export default function ClubsScreen() {
     navigation.navigate('ChallengeDetail', { challengeId });
   };
 
-  const formatMemberCount = (count: number): string => {
+  const formatMemberCount = (count: number | undefined | null): string => {
+    if (count === undefined || count === null) {
+      return '0';
+    }
     if (count >= 1000000) {
       return (count / 1000000).toFixed(1) + 'M';
     }

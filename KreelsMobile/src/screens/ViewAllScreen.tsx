@@ -106,7 +106,7 @@ const getVideosForType = (type: ViewAllType): Video[] => {
   if (type.startsWith('genre_')) {
     const genre = type.replace('genre_', '').toLowerCase();
     return mockVideos.filter(video =>
-      video.tags.some(tag => tag.toLowerCase().includes(genre) || genre.includes(tag.toLowerCase()))
+      (video.tags || []).some(tag => tag.toLowerCase().includes(genre) || genre.includes(tag.toLowerCase()))
     );
   }
 
