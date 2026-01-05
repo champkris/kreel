@@ -638,6 +638,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.screenPadding,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 428,
+      alignSelf: 'center' as const,
+      width: '100%',
+    }),
   },
   // Feed
   composerCard: {
