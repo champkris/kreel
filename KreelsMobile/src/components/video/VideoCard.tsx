@@ -64,21 +64,22 @@ const VideoCard: React.FC<VideoCardProps> = ({
   const cardHeight = width / aspectRatio;
 
   const renderBadge = () => {
-    if (video.tags.includes('exclusive')) {
+    const tags = video.tags || [];
+    if (tags.includes('exclusive')) {
       return (
         <View style={[styles.badge, styles.exclusiveBadge]}>
           <Text style={styles.badgeText}>Exclusive</Text>
         </View>
       );
     }
-    if (video.tags.includes('new')) {
+    if (tags.includes('new')) {
       return (
         <View style={[styles.badge, styles.newBadge]}>
           <Text style={styles.badgeText}>New</Text>
         </View>
       );
     }
-    if (video.tags.includes('hot') || video.views > 5000000) { // 5M+ views = Hot
+    if (tags.includes('hot') || (video.views || 0) > 5000000) { // 5M+ views = Hot
       return (
         <View style={[styles.badge, styles.hotBadge]}>
           <Text style={styles.badgeText}>Hot</Text>
