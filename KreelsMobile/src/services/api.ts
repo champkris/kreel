@@ -140,6 +140,11 @@ export const videosAPI = {
 
 // Users API
 export const usersAPI = {
+  getCreators: async (page = 1, limit = 20) => {
+    const response = await api.get(`/users/creators?page=${page}&limit=${limit}`);
+    return response.data;
+  },
+
   getProfile: async (userId: string) => {
     const response = await api.get(`/users/${userId}`);
     return response.data;

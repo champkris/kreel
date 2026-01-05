@@ -26,7 +26,7 @@ import VideoCard from '../components/video/VideoCard';
 import VideoPlayer from '../components/video/VideoPlayer';
 import SwipeableVideoPlayer from '../components/video/SwipeableVideoPlayer';
 import { Video } from '../types';
-import { seriesAPI } from '../services/api';
+import { seriesAPI, usersAPI } from '../services/api';
 import {
   mockVideos,
   getVideosByCategory,
@@ -38,6 +38,17 @@ import {
   getFollowedChannels,
 } from '../data/seedData';
 
+// Channel type for API response
+interface Channel {
+  id: string;
+  username: string;
+  displayName?: string;
+  name?: string; // For mock data compatibility
+  avatar?: string;
+  followersCount: number;
+  videosCount: number;
+}
+
 const { width: screenWidth } = Dimensions.get('window');
 
 // Calculate card width for grid
@@ -47,9 +58,6 @@ const effectiveWidth = Platform.OS === 'web' ? Math.min(screenWidth, 428) : scre
 const gridCardWidth = Math.floor((effectiveWidth - spacing.screenPadding * 2 - spacing.md * 2) / 3);
 
 type TabType = 'Following' | 'Trending' | 'Drama' | 'Live';
-
-// Get followed channels from seed data
-const followedChannels = getFollowedChannels();
 
 const continueWatching = mockVideos.slice(0, 4).map((video, index) => ({
   ...video,
@@ -87,10 +95,28 @@ export default function HomeScreen() {
   const [showSwipeablePlayer, setShowSwipeablePlayer] = useState(false);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
   const [seriesData, setSeriesData] = useState<SeriesItem[]>([]);
+  const [followedChannels, setFollowedChannels] = useState<Channel[]>([]);
 
   useEffect(() => {
     fetchSeries();
+    fetchCreators();
   }, []);
+
+  const fetchCreators = async () => {
+    try {
+      const response = await usersAPI.getCreators(1, 10);
+      if (response.success && response.data?.length > 0) {
+        setFollowedChannels(response.data);
+      } else {
+        // Fallback to mock data
+        setFollowedChannels(getFollowedChannels());
+      }
+    } catch (error) {
+      console.error('Error fetching creators:', error);
+      // Fallback to mock data
+      setFollowedChannels(getFollowedChannels());
+    }
+  };
 
   const fetchSeries = async () => {
     try {
@@ -122,10 +148,10 @@ export default function HomeScreen() {
     navigation.navigate('ViewAll', { type, title });
   };
 
-  const handleChannelPress = (channel: { id: string; name: string; avatar: string | null }) => {
+  const handleChannelPress = (channel: Channel) => {
     navigation.navigate('Channel', {
       id: channel.id,
-      name: channel.name,
+      name: channel.displayName || channel.name || channel.username,
       avatar: channel.avatar || undefined,
     });
   };
@@ -277,10 +303,10 @@ export default function HomeScreen() {
                   colors={[colors.primary, colors.primaryDark]}
                   style={StyleSheet.absoluteFill}
                 />
-                <Text style={styles.channelInitial}>{item.name[0]}</Text>
+                <Text style={styles.channelInitial}>{(item.displayName || item.name || item.username || '?')[0]}</Text>
               </View>
             )}
-            <Text style={styles.channelName} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.channelName} numberOfLines={1}>{item.displayName || item.name || item.username}</Text>
           </TouchableOpacity>
         )}
       />

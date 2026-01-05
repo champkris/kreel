@@ -4,6 +4,98 @@ import { prisma } from '../index';
 
 const router = express.Router();
 
+// Get list of creators (users with videos)
+router.get('/creators', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const [creators, total] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          videos: {
+            some: {
+              isPublished: true,
+              isActive: true
+            }
+          }
+        },
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatar: true,
+          bio: true,
+          userType: true,
+          experiencePoints: true,
+          currentLevel: true,
+          currentRank: true,
+          badges: {
+            include: {
+              badge: true
+            }
+          },
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+              videos: {
+                where: {
+                  isPublished: true,
+                  isActive: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: [
+          { currentLevel: 'desc' },
+          { experiencePoints: 'desc' }
+        ],
+        skip,
+        take: limit
+      }),
+      prisma.user.count({
+        where: {
+          videos: {
+            some: {
+              isPublished: true,
+              isActive: true
+            }
+          }
+        }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      data: creators.map(creator => ({
+        ...creator,
+        followersCount: creator._count.followers,
+        followingCount: creator._count.following,
+        videosCount: creator._count.videos,
+        badges: creator.badges.map(ub => ({
+          ...ub.badge,
+          earnedAt: ub.earnedAt
+        }))
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching creators:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to fetch creators' }
+    });
+  }
+});
+
 // Get user profile by ID (public)
 router.get('/:id', async (req, res) => {
   try {
