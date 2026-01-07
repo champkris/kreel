@@ -5,6 +5,84 @@ import { notificationService } from '../services/notificationService';
 
 const router = express.Router();
 
+// Profile completion calculation helper
+function calculateProfileCompletion(user: {
+  username: string | null;
+  displayName: string | null;
+  avatar: string | null;
+  bio: string | null;
+  dateOfBirth: Date | null;
+  gender: string | null;
+  country: string | null;
+}) {
+  const fields = {
+    username: { weight: 15, filled: !!user.username },
+    displayName: { weight: 15, filled: !!user.displayName },
+    avatar: { weight: 20, filled: !!user.avatar },
+    bio: { weight: 15, filled: !!user.bio },
+    dateOfBirth: { weight: 10, filled: !!user.dateOfBirth },
+    gender: { weight: 10, filled: !!user.gender },
+    country: { weight: 15, filled: !!user.country },
+  };
+
+  const percentage = Object.values(fields)
+    .filter(f => f.filled)
+    .reduce((sum, f) => sum + f.weight, 0);
+
+  const completedFields = Object.entries(fields)
+    .filter(([_, v]) => v.filled)
+    .map(([k]) => k);
+
+  const missingFields = Object.entries(fields)
+    .filter(([_, v]) => !v.filled)
+    .map(([k]) => k);
+
+  return {
+    percentage,
+    completedFields,
+    missingFields,
+    isComplete: percentage === 100
+  };
+}
+
+// Get current user's profile completion status
+router.get('/me/profile-completion', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: {
+        username: true,
+        displayName: true,
+        avatar: true,
+        bio: true,
+        dateOfBirth: true,
+        gender: true,
+        country: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'User not found' }
+      });
+    }
+
+    const completion = calculateProfileCompletion(user);
+
+    res.json({
+      success: true,
+      data: completion
+    });
+  } catch (error) {
+    console.error('Error fetching profile completion:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to fetch profile completion' }
+    });
+  }
+});
+
 // Get list of creators (users with videos)
 router.get('/creators', async (req, res) => {
   try {
@@ -172,7 +250,23 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
       });
     }
 
-    const { displayName, bio, avatar, country, language } = req.body;
+    const { displayName, bio, avatar, country, language, username, dateOfBirth, gender, phone } = req.body;
+
+    // If username is being updated, check if it's already taken
+    if (username) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          username,
+          id: { not: id }
+        }
+      });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Username is already taken' }
+        });
+      }
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id },
@@ -181,7 +275,11 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
         ...(bio !== undefined && { bio }),
         ...(avatar && { avatar }),
         ...(country && { country }),
-        ...(language && { language })
+        ...(language && { language }),
+        ...(username && { username }),
+        ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
+        ...(gender && { gender }),
+        ...(phone !== undefined && { phone })
       },
       select: {
         id: true,
@@ -193,7 +291,10 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
         language: true,
         userType: true,
         experiencePoints: true,
-        currentLevel: true
+        currentLevel: true,
+        dateOfBirth: true,
+        gender: true,
+        phone: true
       }
     });
 

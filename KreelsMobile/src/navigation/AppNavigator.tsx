@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -392,8 +392,13 @@ function OnboardingFlow() {
   }
 }
 
+// Props for AppNavigator
+interface AppNavigatorProps {
+  navigationRef?: React.RefObject<NavigationContainerRef<any> | null>;
+}
+
 // Main App Navigator
-export default function AppNavigator() {
+export default function AppNavigator({ navigationRef }: AppNavigatorProps) {
   const { isAuthenticated, isLoading } = useAuthStore();
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
 
@@ -413,7 +418,7 @@ export default function AppNavigator() {
   // Show splash while checking status
   if (isLoading || hasSeenOnboarding === null) {
     return (
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <RootStack.Navigator screenOptions={{ headerShown: false }}>
           <RootStack.Screen name="Splash" component={SplashScreen} />
         </RootStack.Navigator>
@@ -422,7 +427,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {!hasSeenOnboarding ? (
           <>

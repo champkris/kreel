@@ -150,8 +150,23 @@ export const usersAPI = {
     return response.data;
   },
 
-  updateProfile: async (userId: string, data: { displayName?: string; bio?: string; avatar?: string }) => {
+  updateProfile: async (userId: string, data: {
+    displayName?: string;
+    bio?: string;
+    avatar?: string;
+    username?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    country?: string;
+    phone?: string;
+    language?: string;
+  }) => {
     const response = await api.put(`/users/${userId}`, data);
+    return response.data;
+  },
+
+  getProfileCompletion: async () => {
+    const response = await api.get('/users/me/profile-completion');
     return response.data;
   },
 

@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -11,6 +12,9 @@ import {
 } from './src/services/notificationService';
 import { notificationsAPI } from './src/services/api';
 import { useNotificationStore } from './src/store/notificationStore';
+import { useProfileCompletionStore } from './src/store/profileCompletionStore';
+import { ProfileCompletionPopup } from './src/components/profile';
+import { useNavigation, NavigationContainerRef } from '@react-navigation/native';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -21,6 +25,9 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Navigation ref for profile completion navigation
+export const navigationRef = React.createRef<NavigationContainerRef<any> | null>();
 
 // Notification initializer component
 function NotificationInitializer() {
@@ -79,12 +86,92 @@ function NotificationInitializer() {
   return null;
 }
 
+// Profile completion popup manager
+function ProfileCompletionManager() {
+  const { isAuthenticated } = useAuthStore();
+  const {
+    fetchCompletion,
+    loadLastReminderTime,
+    shouldShowReminder,
+    showPopup,
+    setShowPopup,
+    isComplete,
+  } = useProfileCompletionStore();
+  const appState = useRef(AppState.currentState);
+  const hasCheckedOnMount = useRef(false);
+
+  // Load last reminder time and check completion on mount
+  useEffect(() => {
+    if (isAuthenticated && !hasCheckedOnMount.current) {
+      hasCheckedOnMount.current = true;
+      initializeProfileCompletion();
+    }
+  }, [isAuthenticated]);
+
+  // Listen for app state changes
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [isAuthenticated]);
+
+  const initializeProfileCompletion = async () => {
+    await loadLastReminderTime();
+    await fetchCompletion();
+    // Small delay to ensure data is loaded before checking
+    setTimeout(() => {
+      if (shouldShowReminder()) {
+        setShowPopup(true);
+      }
+    }, 1500);
+  };
+
+  const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+    if (
+      appState.current.match(/inactive|background/) &&
+      nextAppState === 'active' &&
+      isAuthenticated
+    ) {
+      // App has come to the foreground
+      await fetchCompletion();
+      if (shouldShowReminder()) {
+        setShowPopup(true);
+      }
+    }
+    appState.current = nextAppState;
+  };
+
+  const handleCompleteProfile = () => {
+    setShowPopup(false);
+    // Navigate to PersonalInfo screen
+    if (navigationRef.current) {
+      navigationRef.current.navigate('PersonalInfo');
+    }
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+  };
+
+  if (!isAuthenticated || isComplete) {
+    return null;
+  }
+
+  return (
+    <ProfileCompletionPopup
+      visible={showPopup}
+      onClose={handleClosePopup}
+      onCompleteProfile={handleCompleteProfile}
+    />
+  );
+}
+
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <NotificationInitializer />
-        <AppNavigator />
+        <AppNavigator navigationRef={navigationRef} />
+        <ProfileCompletionManager />
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

@@ -20,8 +20,10 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { useAuthStore } from '../store/authStore';
+import { useProfileCompletionStore } from '../store/profileCompletionStore';
 import { usersAPI, videosAPI } from '../services/api';
 import { Badge, BadgeRow, VerifiedBadge, RankBadge, XPProgress } from '../components/common';
+import { ProfileCompletionProgress } from '../components/profile';
 import type { BadgeData, RankData } from '../components/common';
 import {
   RANK_TIERS,
@@ -61,6 +63,7 @@ interface VideoPost {
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, logout } = useAuthStore();
+  const { fetchCompletion, isComplete } = useProfileCompletionStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [videos, setVideos] = useState<VideoPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +72,7 @@ export default function ProfileScreen() {
     if (user?.id) {
       fetchProfile();
       fetchVideos();
+      fetchCompletion();
     }
   }, [user?.id]);
 
@@ -101,7 +105,7 @@ export default function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    Alert.alert('Edit Profile', 'Edit Profile feature coming soon!');
+    navigation.navigate('PersonalInfo' as never);
   };
 
   const handleCreateChannel = () => {
@@ -240,6 +244,17 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>Following</Text>
             </View>
           </View>
+
+          {/* Profile Completion Progress */}
+          {!isComplete && (
+            <View style={styles.completionContainer}>
+              <ProfileCompletionProgress
+                size={50}
+                strokeWidth={4}
+                onPress={handleEditProfile}
+              />
+            </View>
+          )}
 
           {/* Edit Profile Button */}
           <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
@@ -545,6 +560,9 @@ const styles = StyleSheet.create({
     width: 1,
     height: 30,
     backgroundColor: colors.border,
+  },
+  completionContainer: {
+    marginBottom: spacing.lg,
   },
   editButton: {
     flexDirection: 'row',
