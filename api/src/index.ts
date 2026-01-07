@@ -30,6 +30,7 @@ import forumRoutes from './routes/forum';
 import clubRoutes from './routes/clubs';
 import challengeRoutes from './routes/challenges';
 import notificationRoutes from './routes/notifications';
+import verificationRoutes from './routes/verification';
 
 console.log('Routes imported');
 
@@ -142,6 +143,7 @@ app.use('/api/forum', forumRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/verification', verificationRoutes);
 
 // Initialize notification service with Socket.IO
 notificationService.setSocketIO(io);

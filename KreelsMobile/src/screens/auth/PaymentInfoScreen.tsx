@@ -14,25 +14,19 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { Button, Input } from '../../components/common';
+import { verificationAPI } from '../../services/api';
 
 interface Props {
-  onComplete: (data: PaymentData) => void;
+  onComplete: () => void;
   onBack: () => void;
   currentStep: number;
   totalSteps: number;
 }
 
-interface PaymentData {
-  payoutMethod: string;
-  accountHolderName: string;
-  bankName: string;
-  accountNumber: string;
-}
-
 const payoutMethods = [
-  { id: 'bank_transfer', label: 'Bank Transfer' },
-  { id: 'paypal', label: 'PayPal' },
-  { id: 'stripe', label: 'Stripe' },
+  { id: 'BANK_TRANSFER', label: 'Bank Transfer' },
+  { id: 'PAYPAL', label: 'PayPal' },
+  { id: 'STRIPE', label: 'Stripe' },
 ];
 
 export default function PaymentInfoScreen({
@@ -41,26 +35,81 @@ export default function PaymentInfoScreen({
   currentStep,
   totalSteps,
 }: Props) {
-  const [selectedMethod, setSelectedMethod] = useState('bank_transfer');
+  const [selectedMethod, setSelectedMethod] = useState('BANK_TRANSFER');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    accountHolderName: '',
+    bankAccountName: '',
     bankName: '',
-    accountNumber: '',
+    bankAccountNumber: '',
+    paypalEmail: '',
+    stripeEmail: '',
   });
 
   const updateFormData = (field: string) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleComplete = () => {
-    if (!formData.accountHolderName || !formData.bankName || !formData.accountNumber) {
-      Alert.alert('Required', 'Please fill in all payment details');
-      return;
+  const validateForm = () => {
+    if (selectedMethod === 'BANK_TRANSFER') {
+      if (!formData.bankAccountName || !formData.bankName || !formData.bankAccountNumber) {
+        Alert.alert('Required', 'Please fill in all bank details');
+        return false;
+      }
+    } else if (selectedMethod === 'PAYPAL') {
+      if (!formData.paypalEmail) {
+        Alert.alert('Required', 'Please enter your PayPal email');
+        return false;
+      }
+    } else if (selectedMethod === 'STRIPE') {
+      if (!formData.stripeEmail) {
+        Alert.alert('Required', 'Please enter your Stripe email');
+        return false;
+      }
     }
-    onComplete({
-      payoutMethod: selectedMethod,
-      ...formData,
-    });
+    return true;
+  };
+
+  const handleComplete = async () => {
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Submit payment info
+      const paymentResponse = await verificationAPI.submitPayment({
+        payoutMethod: selectedMethod,
+        bankAccountName: selectedMethod === 'BANK_TRANSFER' ? formData.bankAccountName : undefined,
+        bankName: selectedMethod === 'BANK_TRANSFER' ? formData.bankName : undefined,
+        bankAccountNumber: selectedMethod === 'BANK_TRANSFER' ? formData.bankAccountNumber : undefined,
+        paypalEmail: selectedMethod === 'PAYPAL' ? formData.paypalEmail : undefined,
+        stripeEmail: selectedMethod === 'STRIPE' ? formData.stripeEmail : undefined,
+      });
+
+      if (!paymentResponse.success) {
+        Alert.alert('Error', paymentResponse.error?.message || 'Failed to submit payment information');
+        return;
+      }
+
+      // Submit for review
+      const submitResponse = await verificationAPI.submitForReview();
+
+      if (submitResponse.success) {
+        Alert.alert(
+          'Verification Submitted!',
+          'Your verification documents have been submitted for review. We will notify you once the review is complete.',
+          [{ text: 'OK', onPress: onComplete }]
+        );
+      } else {
+        Alert.alert('Error', submitResponse.error?.message || 'Failed to submit for review');
+      }
+    } catch (error: any) {
+      console.error('Error submitting payment info:', error);
+      Alert.alert(
+        'Error',
+        error.response?.data?.error?.message || 'Failed to submit payment information'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const progress = (currentStep / totalSteps) * 100;
@@ -96,13 +145,6 @@ export default function PaymentInfoScreen({
           {/* Payout Method Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Payout Method</Text>
-            <TouchableOpacity style={styles.selectButton}>
-              <Text style={styles.selectText}>
-                {payoutMethods.find(m => m.id === selectedMethod)?.label}
-              </Text>
-              <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
-            </TouchableOpacity>
-
             <View style={styles.methodOptions}>
               {payoutMethods.map((method) => (
                 <TouchableOpacity
@@ -112,6 +154,7 @@ export default function PaymentInfoScreen({
                     selectedMethod === method.id && styles.methodOptionSelected,
                   ]}
                   onPress={() => setSelectedMethod(method.id)}
+                  disabled={isSubmitting}
                 >
                   <Text
                     style={[
@@ -130,13 +173,14 @@ export default function PaymentInfoScreen({
           </View>
 
           {/* Bank Details Form */}
-          {selectedMethod === 'bank_transfer' && (
+          {selectedMethod === 'BANK_TRANSFER' && (
             <View style={styles.formSection}>
               <Input
                 label="Account Holder Name"
                 placeholder="Full Name"
-                value={formData.accountHolderName}
-                onChangeText={updateFormData('accountHolderName')}
+                value={formData.bankAccountName}
+                onChangeText={updateFormData('bankAccountName')}
+                editable={!isSubmitting}
               />
 
               <Input
@@ -144,42 +188,46 @@ export default function PaymentInfoScreen({
                 placeholder="City Bank LTD"
                 value={formData.bankName}
                 onChangeText={updateFormData('bankName')}
+                editable={!isSubmitting}
               />
 
               <Input
                 label="IBAN/Account Number"
                 placeholder="1311 0214 6541 0554"
-                value={formData.accountNumber}
-                onChangeText={updateFormData('accountNumber')}
+                value={formData.bankAccountNumber}
+                onChangeText={updateFormData('bankAccountNumber')}
                 keyboardType="numeric"
+                editable={!isSubmitting}
               />
             </View>
           )}
 
           {/* PayPal Form */}
-          {selectedMethod === 'paypal' && (
+          {selectedMethod === 'PAYPAL' && (
             <View style={styles.formSection}>
               <Input
                 label="PayPal Email"
                 placeholder="your@email.com"
-                value={formData.accountHolderName}
-                onChangeText={updateFormData('accountHolderName')}
+                value={formData.paypalEmail}
+                onChangeText={updateFormData('paypalEmail')}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                editable={!isSubmitting}
               />
             </View>
           )}
 
           {/* Stripe Form */}
-          {selectedMethod === 'stripe' && (
+          {selectedMethod === 'STRIPE' && (
             <View style={styles.formSection}>
               <Input
                 label="Stripe Account Email"
                 placeholder="your@email.com"
-                value={formData.accountHolderName}
-                onChangeText={updateFormData('accountHolderName')}
+                value={formData.stripeEmail}
+                onChangeText={updateFormData('stripeEmail')}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                editable={!isSubmitting}
               />
             </View>
           )}
@@ -200,10 +248,12 @@ export default function PaymentInfoScreen({
       {/* Footer */}
       <View style={styles.footer}>
         <Button
-          title="Continue"
+          title={isSubmitting ? 'Submitting...' : 'Complete Verification'}
           onPress={handleComplete}
           variant="primary"
           fullWidth
+          disabled={isSubmitting}
+          loading={isSubmitting}
         />
       </View>
     </SafeAreaView>
@@ -282,21 +332,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.medium,
     marginBottom: spacing.md,
-  },
-  selectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderRadius: spacing.borderRadius.md,
-    padding: spacing.base,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
-  },
-  selectText: {
-    color: colors.textPrimary,
-    fontSize: typography.fontSize.base,
   },
   methodOptions: {
     gap: spacing.sm,

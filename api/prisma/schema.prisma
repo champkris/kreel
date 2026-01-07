@@ -106,6 +106,9 @@ model User {
   pushTokens            PushToken[]
   notificationSettings  NotificationSettings?
 
+  // Professional Verification
+  professionalVerification ProfessionalVerification?
+
   @@map("users")
 }
 
@@ -120,6 +123,63 @@ enum Gender {
   MALE
   FEMALE
   OTHER
+}
+
+// Professional Verification
+model ProfessionalVerification {
+  id          String              @id @default(cuid())
+  userId      String              @unique
+  status      VerificationStatus  @default(PENDING)
+
+  // Identity Verification (Step 1)
+  idType          String?         // PASSPORT, NATIONAL_ID, DRIVERS_LICENSE
+  idDocumentUrl   String?
+  idVerifiedAt    DateTime?
+
+  // Address Verification (Step 2)
+  addressDocType  String?         // UTILITY_BILL, PHONE_BILL, BANK_STATEMENT
+  addressDocUrl   String?
+  addressVerifiedAt DateTime?
+
+  // Payment Information (Step 3)
+  payoutMethod    String?         // BANK_TRANSFER, PAYPAL, STRIPE
+  bankAccountName String?
+  bankName        String?
+  bankAccountNumber String?       // Encrypted IBAN/Account number
+  paypalEmail     String?
+  stripeEmail     String?
+  paymentVerifiedAt DateTime?
+
+  // Business Information (Optional for businesses)
+  businessName    String?
+  businessRegNumber String?
+  taxId           String?
+
+  // Admin Review
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+
+  // Timestamps
+  submittedAt     DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("professional_verifications")
+}
+
+enum VerificationStatus {
+  NOT_STARTED
+  PENDING
+  IDENTITY_SUBMITTED
+  ADDRESS_SUBMITTED
+  PAYMENT_SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
 }
 
 // Badge System

@@ -15,18 +15,19 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { Button, Card } from '../../components/common';
+import { verificationAPI } from '../../services/api';
 
 interface Props {
-  onContinue: (data: { documentType: string; documentImage: string | null }) => void;
+  onContinue: () => void;
   onBack: () => void;
   currentStep: number;
   totalSteps: number;
 }
 
 const documentTypes = [
-  { id: 'utility', label: 'Utility Bill' },
-  { id: 'phone', label: 'Phone Bill' },
-  { id: 'bank', label: 'Bank Statement' },
+  { id: 'UTILITY_BILL', label: 'Utility Bill' },
+  { id: 'PHONE_BILL', label: 'Phone Bill' },
+  { id: 'BANK_STATEMENT', label: 'Bank Statement' },
 ];
 
 export default function AddressVerificationScreen({
@@ -35,8 +36,9 @@ export default function AddressVerificationScreen({
   currentStep,
   totalSteps,
 }: Props) {
-  const [selectedDocType, setSelectedDocType] = useState('utility');
+  const [selectedDocType, setSelectedDocType] = useState('UTILITY_BILL');
   const [documentImage, setDocumentImage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -58,12 +60,35 @@ export default function AddressVerificationScreen({
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!documentImage) {
       Alert.alert('Required', 'Please upload your address document');
       return;
     }
-    onContinue({ documentType: selectedDocType, documentImage });
+
+    setIsSubmitting(true);
+    try {
+      // In production, you would upload the image to cloud storage first
+      // and get back a URL. For now, we'll use the local URI as a placeholder.
+      const response = await verificationAPI.submitAddress({
+        addressDocType: selectedDocType,
+        addressDocUrl: documentImage,
+      });
+
+      if (response.success) {
+        onContinue();
+      } else {
+        Alert.alert('Error', response.error?.message || 'Failed to submit address verification');
+      }
+    } catch (error: any) {
+      console.error('Error submitting address verification:', error);
+      Alert.alert(
+        'Error',
+        error.response?.data?.error?.message || 'Failed to submit address verification'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const progress = (currentStep / totalSteps) * 100;
@@ -99,43 +124,36 @@ export default function AddressVerificationScreen({
           {/* Document Type Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Document Type</Text>
-            <View style={styles.selectContainer}>
-              <TouchableOpacity style={styles.selectButton}>
-                <Text style={styles.selectText}>
-                  {documentTypes.find(d => d.id === selectedDocType)?.label}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
-              </TouchableOpacity>
-
-              {/* Dropdown options */}
-              <View style={styles.dropdownContainer}>
-                {documentTypes.map((type) => (
-                  <TouchableOpacity
-                    key={type.id}
+            <View style={styles.dropdownContainer}>
+              {documentTypes.map((type) => (
+                <TouchableOpacity
+                  key={type.id}
+                  style={[
+                    styles.dropdownOption,
+                    selectedDocType === type.id && styles.dropdownOptionSelected,
+                  ]}
+                  onPress={() => setSelectedDocType(type.id)}
+                >
+                  <Text
                     style={[
-                      styles.dropdownOption,
-                      selectedDocType === type.id && styles.dropdownOptionSelected,
+                      styles.dropdownText,
+                      selectedDocType === type.id && styles.dropdownTextSelected,
                     ]}
-                    onPress={() => setSelectedDocType(type.id)}
                   >
-                    <Text
-                      style={[
-                        styles.dropdownText,
-                        selectedDocType === type.id && styles.dropdownTextSelected,
-                      ]}
-                    >
-                      {type.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                    {type.label}
+                  </Text>
+                  {selectedDocType === type.id && (
+                    <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
           {/* Upload Section */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Upload Image</Text>
-            <TouchableOpacity onPress={handlePickImage}>
+            <TouchableOpacity onPress={handlePickImage} disabled={isSubmitting}>
               <Card variant="outlined" style={styles.uploadCard}>
                 {documentImage ? (
                   <View style={styles.uploadedContainer}>
@@ -175,10 +193,12 @@ export default function AddressVerificationScreen({
       {/* Footer */}
       <View style={styles.footer}>
         <Button
-          title="Continue"
+          title={isSubmitting ? 'Submitting...' : 'Continue'}
           onPress={handleContinue}
           variant="primary"
           fullWidth
+          disabled={isSubmitting}
+          loading={isSubmitting}
         />
       </View>
     </SafeAreaView>
@@ -258,23 +278,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
     marginBottom: spacing.md,
   },
-  selectContainer: {
-    gap: spacing.sm,
-  },
-  selectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderRadius: spacing.borderRadius.md,
-    padding: spacing.base,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  selectText: {
-    color: colors.textPrimary,
-    fontSize: typography.fontSize.base,
-  },
   dropdownContainer: {
     backgroundColor: colors.surface,
     borderRadius: spacing.borderRadius.md,
@@ -283,6 +286,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   dropdownOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: spacing.base,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,

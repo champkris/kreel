@@ -14,13 +14,20 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { Button, Input } from '../components/common';
 
+type RegisterScreenParams = {
+  userType?: 'INDIVIDUAL' | 'PROFESSIONAL';
+};
+
 export default function RegisterScreen() {
+  const route = useRoute<RouteProp<{ Register: RegisterScreenParams }, 'Register'>>();
+  const userType = route.params?.userType || 'INDIVIDUAL';
+  const isProfessional = userType === 'PROFESSIONAL';
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -54,8 +61,20 @@ export default function RegisterScreen() {
         email: formData.email,
         password: formData.password,
         username: formData.username,
-        displayName: formData.displayName
+        displayName: formData.displayName,
+        userType
       });
+
+      // If professional, navigate to verification flow
+      if (isProfessional) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            { name: 'Main' as never },
+            { name: 'CreatorVerification' as never }
+          ],
+        });
+      }
     } catch (error: any) {
       console.error('Registration error in component:', error);
       Alert.alert('Registration Failed', error.message || 'Something went wrong. Please try again.');
@@ -103,8 +122,20 @@ export default function RegisterScreen() {
 
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>Join KREELS and start your journey</Text>
+              <Text style={styles.title}>
+                {isProfessional ? 'Professional Account' : 'Create Account'}
+              </Text>
+              <Text style={styles.subtitle}>
+                {isProfessional
+                  ? 'Create, monetize, and grow your audience on KREELS'
+                  : 'Join KREELS and start your journey'}
+              </Text>
+              {isProfessional && (
+                <View style={styles.proBadge}>
+                  <Ionicons name="star" size={14} color="#000" />
+                  <Text style={styles.proBadgeText}>PRO</Text>
+                </View>
+              )}
             </View>
 
             {/* Form */}
@@ -255,6 +286,22 @@ const styles = StyleSheet.create({
   subtitle: {
     color: colors.textMuted,
     fontSize: typography.fontSize.base,
+  },
+  proBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: spacing.borderRadius.full,
+    alignSelf: 'flex-start',
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  proBadgeText: {
+    color: '#000',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
   },
   form: {
     marginBottom: spacing.xl,

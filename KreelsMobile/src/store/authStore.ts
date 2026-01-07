@@ -14,6 +14,7 @@ interface AuthStore extends AuthState {
     password: string;
     username: string;
     displayName: string;
+    userType?: 'INDIVIDUAL' | 'PROFESSIONAL';
   }) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
@@ -81,6 +82,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     password: string;
     username: string;
     displayName: string;
+    userType?: 'INDIVIDUAL' | 'PROFESSIONAL';
   }) => {
     set({ isLoading: true, error: null });
     try {

@@ -150,7 +150,7 @@ export type RootStackParamList = {
 
 export type AuthStackParamList = {
   Login: undefined;
-  Register: undefined;
+  Register: { userType?: 'INDIVIDUAL' | 'PROFESSIONAL' } | undefined;
 };
 
 export type CreatorVerificationParamList = {
@@ -348,12 +348,13 @@ function OnboardingFlow() {
   const handleGenreSubmit = async (genres: string[]) => {
     await AsyncStorage.setItem('hasSeenOnboarding', 'true');
     await AsyncStorage.setItem('selectedGenres', JSON.stringify(genres));
+    await AsyncStorage.setItem('selectedUserType', selectedRole === 'professional' ? 'PROFESSIONAL' : 'INDIVIDUAL');
 
-    if (selectedRole === 'professional') {
-      navigation.navigate('Auth');
-    } else {
-      navigation.navigate('Auth');
-    }
+    const userType = selectedRole === 'professional' ? 'PROFESSIONAL' : 'INDIVIDUAL';
+    navigation.navigate('Auth', {
+      screen: 'Register',
+      params: { userType }
+    });
   };
 
   switch (step) {

@@ -397,4 +397,48 @@ export const notificationsAPI = {
   },
 };
 
+// Verification API (for Professional accounts)
+export const verificationAPI = {
+  getStatus: async () => {
+    const response = await api.get('/verification');
+    return response.data;
+  },
+
+  submitIdentity: async (data: { idType: string; idDocumentUrl: string }) => {
+    const response = await api.post('/verification/identity', data);
+    return response.data;
+  },
+
+  submitAddress: async (data: { addressDocType: string; addressDocUrl: string }) => {
+    const response = await api.post('/verification/address', data);
+    return response.data;
+  },
+
+  submitPayment: async (data: {
+    payoutMethod: string;
+    bankAccountName?: string;
+    bankName?: string;
+    bankAccountNumber?: string;
+    paypalEmail?: string;
+    stripeEmail?: string;
+  }) => {
+    const response = await api.post('/verification/payment', data);
+    return response.data;
+  },
+
+  submitForReview: async () => {
+    const response = await api.post('/verification/submit');
+    return response.data;
+  },
+
+  updateBusinessInfo: async (data: {
+    businessName?: string;
+    businessRegNumber?: string;
+    taxId?: string;
+  }) => {
+    const response = await api.post('/verification/business', data);
+    return response.data;
+  },
+};
+
 export default api;

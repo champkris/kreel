@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,18 +16,19 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { Button, Card } from '../../components/common';
+import { verificationAPI } from '../../services/api';
 
 interface Props {
-  onContinue: (data: { idType: string; idImage: string | null }) => void;
+  onContinue: () => void;
   onBack: () => void;
   currentStep: number;
   totalSteps: number;
 }
 
 const idTypes = [
-  { id: 'passport', label: 'Passport' },
-  { id: 'national_id', label: 'National ID' },
-  { id: 'drivers_license', label: "Driver's License" },
+  { id: 'PASSPORT', label: 'Passport' },
+  { id: 'NATIONAL_ID', label: 'National ID' },
+  { id: 'DRIVERS_LICENSE', label: "Driver's License" },
 ];
 
 export default function IdentityVerificationScreen({
@@ -35,8 +37,9 @@ export default function IdentityVerificationScreen({
   currentStep,
   totalSteps,
 }: Props) {
-  const [selectedIdType, setSelectedIdType] = useState('national_id');
+  const [selectedIdType, setSelectedIdType] = useState('NATIONAL_ID');
   const [idImage, setIdImage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -58,12 +61,36 @@ export default function IdentityVerificationScreen({
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!idImage) {
       Alert.alert('Required', 'Please upload your ID document');
       return;
     }
-    onContinue({ idType: selectedIdType, idImage });
+
+    setIsSubmitting(true);
+    try {
+      // In production, you would upload the image to cloud storage first
+      // and get back a URL. For now, we'll use the local URI as a placeholder.
+      // TODO: Implement actual file upload to cloud storage (S3, Firebase, etc.)
+      const response = await verificationAPI.submitIdentity({
+        idType: selectedIdType,
+        idDocumentUrl: idImage, // This should be a cloud storage URL in production
+      });
+
+      if (response.success) {
+        onContinue();
+      } else {
+        Alert.alert('Error', response.error?.message || 'Failed to submit identity verification');
+      }
+    } catch (error: any) {
+      console.error('Error submitting identity verification:', error);
+      Alert.alert(
+        'Error',
+        error.response?.data?.error?.message || 'Failed to submit identity verification'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const progress = (currentStep / totalSteps) * 100;
@@ -128,7 +155,7 @@ export default function IdentityVerificationScreen({
           {/* Upload Section */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Upload Image</Text>
-            <TouchableOpacity onPress={handlePickImage}>
+            <TouchableOpacity onPress={handlePickImage} disabled={isSubmitting}>
               <Card variant="outlined" style={styles.uploadCard}>
                 {idImage ? (
                   <View style={styles.uploadedContainer}>
@@ -159,10 +186,12 @@ export default function IdentityVerificationScreen({
       {/* Footer */}
       <View style={styles.footer}>
         <Button
-          title="Continue"
+          title={isSubmitting ? 'Submitting...' : 'Continue'}
           onPress={handleContinue}
           variant="primary"
           fullWidth
+          disabled={isSubmitting}
+          loading={isSubmitting}
         />
       </View>
     </SafeAreaView>
