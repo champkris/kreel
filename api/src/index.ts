@@ -29,8 +29,12 @@ import liveRoutes from './routes/live';
 import forumRoutes from './routes/forum';
 import clubRoutes from './routes/clubs';
 import challengeRoutes from './routes/challenges';
+import notificationRoutes from './routes/notifications';
 
 console.log('Routes imported');
+
+// Import services
+import { notificationService } from './services/notificationService';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -137,11 +141,29 @@ app.use('/api/live', liveRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/challenges', challengeRoutes);
+app.use('/api/notifications', notificationRoutes);
+
+// Initialize notification service with Socket.IO
+notificationService.setSocketIO(io);
 
 // Socket.IO for real-time features
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-  
+
+  // Authenticate user for personal notification room
+  socket.on('authenticate', async (token: string) => {
+    try {
+      const jwt = await import('jsonwebtoken');
+      const decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+      if (decoded?.id) {
+        socket.join(`user-${decoded.id}`);
+        console.log(`User ${decoded.id} joined personal notification room`);
+      }
+    } catch (error) {
+      console.error('Socket authentication failed:', error);
+    }
+  });
+
   // Join video room for comments
   socket.on('join-video', (videoId) => {
     socket.join(`video-${videoId}`);

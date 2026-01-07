@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { prisma } from '../index';
+import { notificationService } from '../services/notificationService';
 
 const router = express.Router();
 
@@ -284,6 +285,24 @@ router.post('/:id/like', authenticate, async (req: AuthRequest, res) => {
           where: { id: video.creatorId },
           data: { experiencePoints: { increment: 1 } }
         });
+
+        // Send notification to video creator
+        const liker = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { displayName: true, username: true, avatar: true }
+        });
+
+        notificationService.createNotification({
+          userId: video.creatorId,
+          type: 'LIKE',
+          title: 'New Like',
+          body: `${liker?.displayName || liker?.username || 'Someone'} liked your video`,
+          actorId: userId,
+          targetId: id,
+          targetType: 'video',
+          data: { videoId: id },
+          imageUrl: video.thumbnail || liker?.avatar || undefined
+        });
       }
 
       return res.json({
@@ -461,6 +480,49 @@ router.post('/:id/comments', authenticate, async (req: AuthRequest, res) => {
         }
       }
     });
+
+    // Send notification to video creator for new comment
+    if (video.creatorId !== userId) {
+      const commenter = comment.user;
+      const truncatedContent = content.length > 50 ? content.substring(0, 50) + '...' : content;
+
+      notificationService.createNotification({
+        userId: video.creatorId,
+        type: 'COMMENT',
+        title: 'New Comment',
+        body: `${commenter.displayName || commenter.username || 'Someone'}: "${truncatedContent}"`,
+        actorId: userId,
+        targetId: comment.id,
+        targetType: 'comment',
+        data: { videoId: id, commentId: comment.id },
+        imageUrl: commenter.avatar || video.thumbnail || undefined
+      });
+    }
+
+    // Send notification for replies
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parentId },
+        select: { userId: true }
+      });
+
+      if (parentComment && parentComment.userId !== userId) {
+        const replier = comment.user;
+        const truncatedContent = content.length > 50 ? content.substring(0, 50) + '...' : content;
+
+        notificationService.createNotification({
+          userId: parentComment.userId,
+          type: 'COMMENT_REPLY',
+          title: 'New Reply',
+          body: `${replier.displayName || replier.username || 'Someone'} replied: "${truncatedContent}"`,
+          actorId: userId,
+          targetId: comment.id,
+          targetType: 'comment',
+          data: { videoId: id, commentId: comment.id, parentCommentId: parentId },
+          imageUrl: replier.avatar || undefined
+        });
+      }
+    }
 
     res.status(201).json({
       success: true,

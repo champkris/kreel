@@ -37,6 +37,7 @@ import {
   getLiveVideos,
   getFollowedChannels,
 } from '../data/seedData';
+import NotificationBadge from '../components/notifications/NotificationBadge';
 
 // Channel type for API response
 interface Channel {
@@ -203,9 +204,7 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.headerIcon}>
           <Ionicons name="search" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        <NotificationBadge size={24} color={colors.textPrimary} />
       </View>
     </View>
   );

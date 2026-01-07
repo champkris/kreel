@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate, AuthRequest, authorize } from '../middleware/auth';
 import { prisma } from '../index';
+import { notificationService } from '../services/notificationService';
 
 const router = express.Router();
 
@@ -270,6 +271,24 @@ router.post('/:id/follow', authenticate, async (req: AuthRequest, res) => {
         followerId,
         followingId: id
       }
+    });
+
+    // Send notification to the followed user
+    const follower = await prisma.user.findUnique({
+      where: { id: followerId },
+      select: { displayName: true, username: true, avatar: true }
+    });
+
+    notificationService.createNotification({
+      userId: id,
+      type: 'FOLLOW',
+      title: 'New Follower',
+      body: `${follower?.displayName || follower?.username || 'Someone'} started following you`,
+      actorId: followerId,
+      targetId: followerId,
+      targetType: 'user',
+      data: { userId: followerId },
+      imageUrl: follower?.avatar || undefined
     });
 
     res.json({

@@ -65,6 +65,7 @@ import {
 } from '../screens/settings';
 
 import LiveStreamViewScreen from '../screens/main/LiveStreamViewScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 import { useAuthStore } from '../store/authStore';
 
@@ -143,6 +144,8 @@ export type RootStackParamList = {
   CreateClub: undefined;
   // Create Channel
   CreateChannel: undefined;
+  // Notifications
+  Notifications: undefined;
 };
 
 export type AuthStackParamList = {
@@ -467,6 +470,7 @@ export default function AppNavigator() {
         <RootStack.Screen name="DailyRewards" component={DailyRewardsScreen} />
         <RootStack.Screen name="CreateClub" component={CreateClubScreen} />
         <RootStack.Screen name="CreateChannel" component={CreateChannelScreen} />
+        <RootStack.Screen name="Notifications" component={NotificationsScreen} />
       </RootStack.Navigator>
     </NavigationContainer>
   );

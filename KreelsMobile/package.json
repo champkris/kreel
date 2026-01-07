@@ -47,7 +47,9 @@
     "react-native-web": "^0.20.0",
     "@expo/metro-runtime": "~5.0.5",
     "expo-screen-orientation": "~8.1.7",
-    "@react-native-community/slider": "4.5.6"
+    "@react-native-community/slider": "4.5.6",
+    "expo-notifications": "~0.31.4",
+    "expo-device": "~7.1.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

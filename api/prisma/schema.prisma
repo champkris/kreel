@@ -99,7 +99,13 @@ model User {
   invitedBy     String?
   inviter       User?         @relation("UserInvitations", fields: [invitedBy], references: [id])
   invitees      User[]        @relation("UserInvitations")
-  
+
+  // Notification Relations
+  notificationsReceived Notification[]     @relation("NotificationRecipient")
+  notificationsTriggered Notification[]    @relation("NotificationActor")
+  pushTokens            PushToken[]
+  notificationSettings  NotificationSettings?
+
   @@map("users")
 }
 
@@ -968,4 +974,120 @@ model TokenHolder {
 
   @@unique([tokenId, userId])
   @@map("token_holders")
+}
+
+// =====================
+// Notification System
+// =====================
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  body        String
+  data        Json?            // Metadata for deep linking (videoId, userId, etc.)
+  imageUrl    String?          // Optional image for rich notifications
+
+  // Status
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+
+  // Related entities (for querying/filtering)
+  actorId     String?          // User who triggered the notification
+  targetId    String?          // Related entity (video, comment, challenge, etc.)
+  targetType  String?          // 'video', 'comment', 'challenge', 'club', etc.
+
+  // Timestamps
+  createdAt   DateTime         @default(now())
+  expiresAt   DateTime?        // Optional expiration for time-sensitive notifications
+
+  // Relations
+  user        User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor       User?            @relation("NotificationActor", fields: [actorId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([userId, type])
+  @@map("notifications")
+}
+
+model PushToken {
+  id          String   @id @default(cuid())
+  userId      String
+  token       String   @unique
+  platform    String   // 'ios', 'android', 'web'
+  deviceId    String?  // Optional device identifier
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastUsedAt  DateTime?
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+model NotificationSettings {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+
+  // Push notification toggles
+  pushEnabled           Boolean  @default(true)
+  pushFollows           Boolean  @default(true)
+  pushLikes             Boolean  @default(true)
+  pushComments          Boolean  @default(true)
+  pushGifts             Boolean  @default(true)
+  pushChallenges        Boolean  @default(true)
+  pushLiveStreams       Boolean  @default(true)
+  pushWallet            Boolean  @default(true)
+  pushProfileReminders  Boolean  @default(true)
+
+  // In-app notification toggles
+  inAppEnabled          Boolean  @default(true)
+
+  // Quiet hours
+  quietHoursEnabled     Boolean  @default(false)
+  quietHoursStart       String?  // e.g., "22:00"
+  quietHoursEnd         String?  // e.g., "08:00"
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
+
+enum NotificationType {
+  // Social
+  FOLLOW           // Someone followed you
+  LIKE             // Someone liked your video
+  COMMENT          // Someone commented on your video
+  COMMENT_REPLY    // Someone replied to your comment
+  MENTION          // Someone mentioned you
+
+  // Content
+  NEW_VIDEO        // Creator you follow posted new video
+  CHALLENGE_NEW    // New challenge in a club you're in
+  CHALLENGE_ENTRY  // Someone entered your challenge
+  CHALLENGE_VOTE   // Your entry received a vote
+  CHALLENGE_WIN    // You won a challenge
+  CHALLENGE_ENDING // Challenge ending soon
+  LIVE_STARTING    // Creator you follow is going live
+  CLUB_NEW_POST    // New post in club you're in
+
+  // Transactions
+  GIFT_RECEIVED    // You received a gift
+  WALLET_CREDIT    // Money added to wallet
+  WALLET_DEBIT     // Money deducted from wallet
+  REWARD_EARNED    // Earned XP or rewards
+
+  // System
+  PROFILE_INCOMPLETE  // Reminder to complete profile
+  BADGE_EARNED        // Earned a new badge
+  LEVEL_UP            // Leveled up
+  SYSTEM_ANNOUNCEMENT // Platform-wide announcements
 }

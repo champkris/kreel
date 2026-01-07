@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.champkris.KreelsMobile"
+      "bundleIdentifier": "com.champkris.KreelsMobile",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,8 +25,17 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.champkris.KreelsMobile"
+      "package": "com.champkris.KreelsMobile",
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE"]
     },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#D4A84B"
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     },

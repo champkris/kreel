@@ -334,4 +334,52 @@ export const seriesAPI = {
   },
 };
 
+// Notifications API
+export const notificationsAPI = {
+  getNotifications: async (page = 1, limit = 20, unreadOnly = false) => {
+    const response = await api.get(`/notifications?page=${page}&limit=${limit}&unreadOnly=${unreadOnly}`);
+    return response.data;
+  },
+
+  getUnreadCount: async () => {
+    const response = await api.get('/notifications/unread-count');
+    return response.data;
+  },
+
+  markAsRead: async (id: string) => {
+    const response = await api.put(`/notifications/${id}/read`);
+    return response.data;
+  },
+
+  markAllAsRead: async () => {
+    const response = await api.put('/notifications/read-all');
+    return response.data;
+  },
+
+  deleteNotification: async (id: string) => {
+    const response = await api.delete(`/notifications/${id}`);
+    return response.data;
+  },
+
+  registerPushToken: async (token: string, platform: string, deviceId?: string) => {
+    const response = await api.post('/notifications/push-token', { token, platform, deviceId });
+    return response.data;
+  },
+
+  deactivatePushToken: async (token: string) => {
+    const response = await api.delete('/notifications/push-token', { data: { token } });
+    return response.data;
+  },
+
+  getSettings: async () => {
+    const response = await api.get('/notifications/settings');
+    return response.data;
+  },
+
+  updateSettings: async (settings: Record<string, boolean | string>) => {
+    const response = await api.put('/notifications/settings', settings);
+    return response.data;
+  },
+};
+
 export default api;
