@@ -131,6 +131,27 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Legal pages (for App Store / Play Store)
+const publicPath = path.join(__dirname, '../public');
+app.get('/privacy-policy', (req, res) => {
+  res.sendFile(path.join(publicPath, 'privacy-policy.html'));
+});
+app.get('/privacy-policy.html', (req, res) => {
+  res.sendFile(path.join(publicPath, 'privacy-policy.html'));
+});
+app.get('/terms-of-service', (req, res) => {
+  res.sendFile(path.join(publicPath, 'terms-of-service.html'));
+});
+app.get('/terms-of-service.html', (req, res) => {
+  res.sendFile(path.join(publicPath, 'terms-of-service.html'));
+});
+app.get('/support', (req, res) => {
+  res.sendFile(path.join(publicPath, 'support.html'));
+});
+app.get('/support.html', (req, res) => {
+  res.sendFile(path.join(publicPath, 'support.html'));
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
